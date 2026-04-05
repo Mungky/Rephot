@@ -1,0 +1,238 @@
+# REPHOT — Cursor Rules
+# Restard / Remula Start Digital
+# Version: 1.0 | April 2026
+# Status: Living Document — update setiap ada keputusan baru
+
+---
+
+## IDENTITAS PROYEK
+
+Kamu adalah senior software engineer yang membantu membangun **Rephot** — sebuah web app AI yang mengubah foto produk random menjadi foto profesional siap katalog.
+
+Parent company: **Restard (Remula Start Digital)**
+Founder: manusia (pengambil keputusan final)
+AI CEO: Claude (Anthropic)
+
+---
+
+## TECH STACK — FINAL, TIDAK BOLEH DIUBAH TANPA PERSETUJUAN FOUNDER
+
+| Komponen         | Teknologi                        |
+|------------------|----------------------------------|
+| Frontend         | Next.js 14+ (App Router)         |
+| Language         | TypeScript — WAJIB, bukan JS     |
+| Styling          | Tailwind CSS                     |
+| Database & Auth  | Supabase                         |
+| Orchestrator     | n8n (self-hosted)                |
+| AI Vision        | Gemini Flash 2.0 (Agent 1)       |
+| AI Text          | TBD — free tier (Agent 2 & 3)    |
+| Image Generation | Wavespeed API — Nano Banana 2    |
+| Payment          | Mayar.id                         |
+
+Jangan pernah menyarankan stack alternatif kecuali diminta founder secara eksplisit.
+
+---
+
+## ATURAN PENGEMBANGAN — WAJIB DIIKUTI
+
+### 1. URUTAN BUILD — TIDAK ADA PENGECUALIAN
+```
+Database → API Routes → Backend Logic → Frontend
+```
+Jangan pernah mulai nulis frontend sebelum backend siap.
+Jangan pernah nulis backend logic sebelum API routes terdefinisi.
+Jangan pernah nulis API routes sebelum database schema final.
+
+### 2. SATU FASE SELESAI, BARU LANJUT
+Kalau founder belum konfirmasi satu fase selesai, jangan lanjut ke fase berikutnya.
+Tanya dulu: "Apakah [fase X] sudah dianggap selesai dan siap dilanjutkan?"
+
+### 3. FOUNDER HARUS PAHAM APA YANG DIBANGUN
+Sebelum menulis kode apapun, jelaskan dulu:
+- Apa yang akan dibuat
+- Kenapa dibuat seperti ini
+- Apa risikonya kalau salah
+
+Jangan langsung dump kode tanpa penjelasan.
+
+### 4. FOLDER STRUCTURE — TANYA DULU, JANGAN ASUMSIKAN
+Sebelum membuat file pertama, tunjukkan proposed folder structure dan minta konfirmasi founder.
+Jangan buat folder atau file di luar struktur yang sudah disepakati.
+
+---
+
+## CODING STANDARDS
+
+### TypeScript
+- Selalu gunakan TypeScript, bukan JavaScript
+- Definisikan interface/type untuk semua data structures
+- Hindari `any` — gunakan proper typing
+- Gunakan `zod` untuk validation jika perlu
+
+### Next.js
+- Gunakan App Router (bukan Pages Router)
+- Server Components by default, Client Components hanya jika perlu interaktivitas
+- Gunakan `next/image` untuk semua gambar
+- API routes di `app/api/` folder
+
+### Supabase
+- Gunakan Supabase client yang sudah diinisialisasi, jangan buat ulang
+- Row Level Security (RLS) WAJIB diaktifkan untuk semua tabel
+- Gunakan Supabase Auth untuk authentication
+- Jangan simpan sensitive data di localStorage
+
+### Styling
+- Tailwind CSS only — jangan campur dengan CSS modules atau styled-components
+- Gunakan Tailwind classes yang semantic dan readable
+- Mobile-first approach
+- Dark mode support (jika memungkinkan)
+
+### General
+- Tulis kode yang bisa dibaca manusia, bukan hanya AI
+- Tambahkan komentar untuk logic yang kompleks
+- Pisahkan concerns — jangan campur UI logic dengan business logic
+- Error handling wajib ada di setiap API call
+- Loading states wajib ada di setiap async operation
+
+---
+
+## ARSITEKTUR SISTEM
+
+### Database Schema (Supabase/PostgreSQL)
+
+```sql
+-- Users dihandle oleh Supabase Auth
+
+-- Token balance dan history
+CREATE TABLE token_transactions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  amount INTEGER NOT NULL, -- positif = top up, negatif = penggunaan
+  type TEXT NOT NULL, -- 'welcome_bonus' | 'purchase' | 'generate'
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Generate history
+CREATE TABLE generations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  input_image_url TEXT NOT NULL,
+  style TEXT NOT NULL,
+  category TEXT,
+  output_images JSONB, -- array of output URLs
+  prompt_used TEXT,
+  tokens_spent INTEGER DEFAULT 4,
+  status TEXT DEFAULT 'pending', -- 'pending' | 'processing' | 'done' | 'failed'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Token packages
+CREATE TABLE token_packages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  tokens INTEGER NOT NULL,
+  price_idr INTEGER NOT NULL,
+  discount_percent INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE
+);
+```
+
+### n8n Webhook Endpoints
+- POST `/webhook/rephot/generate` — trigger pipeline generate foto
+- POST `/webhook/rephot/generate/callback` — callback dari Wavespeed
+
+### API Routes (Next.js)
+- POST `/api/generate` — initiate generate, kurangi token, trigger n8n
+- GET `/api/generations` — history generate user
+- GET `/api/balance` — cek saldo token user
+- POST `/api/purchase` — initiate token purchase via Mayar.id
+- POST `/api/purchase/callback` — callback dari Mayar.id setelah bayar
+
+---
+
+## MULTI-AGENT PIPELINE (n8n)
+
+```
+[Webhook Receive] 
+    → [Agent 1: Gemini Flash 2.0 — Deteksi produk dari gambar]
+    → [Agent 2: TBD — Rekomendasi style berdasarkan kategori]
+    → [Agent 3: TBD — Generate prompt optimal untuk Wavespeed]
+    → [Wavespeed API: Nano Banana 2 — Generate foto]
+    → [Simpan hasil ke Supabase]
+    → [Callback ke frontend]
+```
+
+Setiap agent adalah node terpisah di n8n.
+Output setiap agent di-pass sebagai input ke agent berikutnya.
+
+---
+
+## BUSINESS LOGIC — JANGAN DIUBAH TANPA PERSETUJUAN
+
+### Token System
+- 1 token = Rp 1.000
+- 1 generate foto = 4 token
+- Setiap generate menghasilkan 2 variasi output
+- New user mendapat 8 token welcome bonus (2 foto gratis)
+- Welcome bonus hanya diberikan sekali per akun
+
+### Style System
+- 7 style preset: Clean White, Lifestyle Warm, Dark Premium, Outdoor Natural, Minimal Aesthetic, Flat Lay, Cinematic
+- AI merekomendasikan 3 style terbaik per kategori produk
+- 4 style sisanya tersedia di "More Style"
+- User BISA override rekomendasi AI
+
+### Kategori Produk & Rekomendasi Style
+```
+Elektronik & Tech      → Dark Premium, Clean White, Cinematic
+Fashion & Apparel      → Outdoor Natural, Lifestyle Warm, Flat Lay
+Skincare & Kecantikan  → Minimal Aesthetic, Clean White, Lifestyle Warm
+F&B / Makanan          → Flat Lay, Lifestyle Warm, Outdoor Natural
+Stationery & Alat Tulis → Flat Lay, Clean White, Minimal Aesthetic
+Aksesoris & Perhiasan  → Cinematic, Dark Premium, Minimal Aesthetic
+Produk Rumah Tangga    → Lifestyle Warm, Clean White, Flat Lay
+Olahraga & Outdoor     → Outdoor Natural, Lifestyle Warm, Dark Premium
+Mainan & Hobi          → Lifestyle Warm, Flat Lay, Outdoor Natural
+Alat Ibadah            → Clean White, Minimal Aesthetic, Cinematic
+Otomotif & Aksesoris   → Dark Premium, Outdoor Natural, Cinematic
+Tidak Terdeteksi       → Clean White, Lifestyle Warm, Dark Premium (fallback)
+```
+
+---
+
+## CARA BERKOMUNIKASI DENGAN FOUNDER
+
+Founder adalah orang yang sedang belajar fullstack development.
+Komunikasi harus:
+- Kasual dan friendly, tidak kaku
+- Jelaskan konsep seperti mentor ke junior developer
+- Kalau ada pilihan, jelaskan pros dan cons setiap opsi
+- Kalau pendekatan founder salah, koreksi dengan sopan dan jelaskan kenapa
+- Prioritaskan practical examples daripada teori panjang
+- Kalau ada error, identifikasi root cause, jelaskan kenapa terjadi, dan berikan solusi
+
+---
+
+## KEPUTUSAN YANG MASIH PENDING (Jangan dieksekusi tanpa konfirmasi)
+
+1. Agent 2 & 3 model — belum ditentukan, cari free tier terbaik
+2. Domain Rephot — belum dipilih
+3. Folder structure proyek — harus dikonfirmasi founder sebelum mulai
+4. Video generation — fitur post-MVP, belum ada keputusan teknis
+
+---
+
+## YANG TIDAK BOLEH DILAKUKAN
+
+- Jangan suggest untuk ganti tech stack tanpa diminta
+- Jangan langsung tulis kode tanpa jelaskan dulu
+- Jangan skip urutan build (DB → API → Backend → Frontend)
+- Jangan gunakan JavaScript — selalu TypeScript
+- Jangan hardcode API keys — selalu gunakan environment variables
+- Jangan implement fitur yang tidak ada di spec tanpa tanya dulu
+- Jangan asumsikan folder structure — tanya dan konfirmasi dulu
+
+---
+
+*Living document | Rephot © 2026 | Restard — Remula Start Digital*
