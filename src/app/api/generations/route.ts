@@ -15,7 +15,9 @@ export async function GET() {
     // 2. Tarik history generations milik user ini, urutkan dari yang paling baru
     const { data: history, error: dbError } = await supabase
       .from('generations')
-      .select('id, input_image_url, style, category, output_images, prompt_used, status, created_at')
+      .select(
+        'id, input_image_url, style, output_images, prompt_used, status, created_at, completed_at, aspect_ratio, resolution, wavespeed_task_id'
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }) // Yang terbaru ada di atas
 

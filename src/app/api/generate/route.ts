@@ -1,31 +1,112 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import {
+  isCloudinaryConfigured,
+  uploadInputImage,
+} from '@/lib/cloudinary'
 
-// Inisialisasi Admin Client (Service Role) buat bypass RLS khusus potong token
-const adminAuthClient = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const MAX_FILE_BYTES = 10 * 1024 * 1024
+
+function getAdminSupabase() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+function parseAspectRatio(v: unknown): string {
+  return typeof v === 'string' && v.trim() ? v.trim() : '1:1'
+}
+
+function parseResolution(v: unknown): string {
+  const s = typeof v === 'string' && v.trim() ? v.trim().toLowerCase() : '4k'
+  return s
+}
 
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 1. Tangkap Payload dari Frontend
-    const body = await req.json()
-    const { imageUrl, style, category, prompt } = body
+    const contentType = req.headers.get('content-type') || ''
 
-    if (!imageUrl || !style) {
-      return NextResponse.json({ error: 'Image URL dan Style wajib diisi' }, { status: 400 })
+    let imageUrl: string | null = null
+    let style: string
+    let prompt: string
+    let aspectRatio: string
+    let resolution: string
+
+    if (contentType.includes('multipart/form-data')) {
+      const form = await req.formData()
+      const file = form.get('file')
+
+      if (!(file instanceof File)) {
+        return NextResponse.json({ error: 'Field "file" wajib di-upload' }, { status: 400 })
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        return NextResponse.json({ error: 'File maksimal 10MB' }, { status: 400 })
+      }
+
+      if (!isCloudinaryConfigured()) {
+        return NextResponse.json(
+          {
+            error:
+              'Upload gambar membutuhkan Cloudinary. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, dan CLOUDINARY_API_SECRET di .env.local.',
+          },
+          { status: 503 }
+        )
+      }
+
+      const buf = Buffer.from(await file.arrayBuffer())
+      style = String(form.get('style') || '').trim()
+      prompt = String(form.get('prompt') || '')
+      aspectRatio = parseAspectRatio(form.get('aspectRatio'))
+      resolution = parseResolution(form.get('resolution'))
+
+      try {
+        imageUrl = await uploadInputImage(buf, { userId: user.id })
+      } catch (uploadErr) {
+        console.error('Cloudinary upload error:', uploadErr)
+        const msg =
+          uploadErr instanceof Error ? uploadErr.message : String(uploadErr)
+        return NextResponse.json(
+          {
+            error: 'Gagal mengunggah gambar ke Cloudinary.',
+            ...(process.env.NODE_ENV === 'development' && { details: msg }),
+          },
+          { status: 502 }
+        )
+      }
+    } else {
+      const body = (await req.json()) as Record<string, unknown>
+      const rawUrl = body.imageUrl
+      imageUrl =
+        typeof rawUrl === 'string' && rawUrl.trim() ? rawUrl.trim() : null
+      style = typeof body.style === 'string' ? body.style.trim() : ''
+      prompt = typeof body.prompt === 'string' ? body.prompt : ''
+      aspectRatio = parseAspectRatio(body.aspectRatio)
+      resolution = parseResolution(body.resolution)
     }
 
-    // 2. Cek Saldo Token User
+    if (!style) {
+      return NextResponse.json({ error: 'Style wajib diisi' }, { status: 400 })
+    }
+
+    if (!imageUrl) {
+      return NextResponse.json(
+        { error: 'Gambar wajib: upload file (multipart → Cloudinary) atau kirim imageUrl (JSON)' },
+        { status: 400 }
+      )
+    }
+
     const { data: transactions, error: balanceError } = await supabase
       .from('token_transactions')
       .select('amount')
@@ -33,86 +114,108 @@ export async function POST(req: Request) {
 
     if (balanceError) throw balanceError
 
-    const currentBalance = transactions.reduce((total, tx) => total + tx.amount, 0)
+    const currentBalance = transactions.reduce(
+      (total: number, tx: { amount: number }) => total + tx.amount,
+      0
+    )
     if (currentBalance < 4) {
-      return NextResponse.json({ error: 'Token tidak cukup. Silakan top up dulu.' }, { status: 402 }) // 402 Payment Required
+      return NextResponse.json(
+        { error: 'Token tidak cukup. Silakan top up dulu.' },
+        { status: 402 }
+      )
     }
 
-    // 3. Potong Saldo (-4 Token) pakai Admin Client
-    const { error: deductError } = await adminAuthClient
-      .from('token_transactions')
-      .insert({
-        user_id: user.id,
-        amount: -4,
-        type: 'generate',
-        description: `Generate foto dengan style ${style}`
-      })
+    const adminSupabase = getAdminSupabase()
 
-    if (deductError) throw deductError
-
-    // 4. Catat status 'pending' ke history generations
-    const { data: genRecord, error: genError } = await supabase
+    const { data: genRecord, error: genError } = await adminSupabase
       .from('generations')
       .insert({
         user_id: user.id,
         input_image_url: imageUrl,
-        style: style,
-        category: category || 'Tidak Terdeteksi',
+        style,
         prompt_used: prompt || '',
-        tokens_spent: 4,
-        status: 'pending'
+        tokens_charged: 4,
+        status: 'processing',
+        aspect_ratio: aspectRatio,
+        resolution,
       })
       .select('id')
       .single()
 
-    if (genError) {
-      // Waduh gagal nyatet history, balikin tokennya! (Manual Rollback)
-      await adminAuthClient.from('token_transactions').insert({
-        user_id: user.id, amount: 4, type: 'refund', description: 'Refund: Sistem gagal mencatat history'
-      })
-      throw genError
+    if (genError) throw genError
+
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL!
+
+    const webhookPayload: Record<string, unknown> = {
+      recordId: genRecord.id,
+      userId: user.id,
+      style,
+      prompt: prompt || '',
+      aspectRatio,
+      resolution,
     }
 
-    // 5. Trigger n8n Webhook
-    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL!
-    
+    webhookPayload.imageUrl = imageUrl
+
     try {
       const n8nResponse = await fetch(n8nWebhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          generationId: genRecord.id, // Kasih ID ini ke n8n biar dia bisa update status nanti
-          userId: user.id,
-          imageUrl,
-          style,
-          prompt
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Webhook-Secret': process.env.N8N_WEBHOOK_SECRET || '',
+        },
+        body: JSON.stringify(webhookPayload),
       })
 
       if (!n8nResponse.ok) {
-        throw new Error('n8n Webhook gagal merespons')
+        const errorBody = await n8nResponse.text()
+        const snippet =
+          errorBody.length > 800 ? `${errorBody.slice(0, 800)}…` : errorBody
+        console.error(
+          '[n8n webhook] HTTP',
+          n8nResponse.status,
+          n8nResponse.statusText,
+          snippet || '(empty body)'
+        )
+        throw new Error(
+          `n8n Webhook HTTP ${n8nResponse.status}: ${snippet || n8nResponse.statusText}`
+        )
       }
     } catch (n8nFetchError) {
-      // 6. Kalau n8n down, refund token dan update status jadi failed
       console.error('n8n Trigger Error:', n8nFetchError)
-      
-      await adminAuthClient.from('token_transactions').insert({
-        user_id: user.id, amount: 4, type: 'refund', description: 'Refund: Mesin AI sedang sibuk/down'
-      })
-      
-      await adminAuthClient.from('generations').update({ status: 'failed' }).eq('id', genRecord.id)
 
-      return NextResponse.json({ error: 'Mesin AI sedang sibuk, token sudah dikembalikan.' }, { status: 503 })
+      await adminSupabase
+        .from('generations')
+        .update({ status: 'failed' })
+        .eq('id', genRecord.id)
+
+      const n8nDetails =
+        n8nFetchError instanceof Error
+          ? n8nFetchError.message
+          : String(n8nFetchError)
+
+      return NextResponse.json(
+        {
+          error: 'Mesin AI sedang sibuk. Coba lagi nanti.',
+          ...(process.env.NODE_ENV === 'development' && { details: n8nDetails }),
+        },
+        { status: 503 }
+      )
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Workflow berjalan! AI sedang memproses foto lo.',
-      generationId: genRecord.id
-    }, { status: 200 })
-
-  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'AI sedang memproses foto lo.',
+        generationId: genRecord.id,
+      },
+      { status: 200 }
+    )
+  } catch (error: unknown) {
     console.error('Generate API Error:', error)
-    return NextResponse.json({ error: 'Terjadi kesalahan internal server' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan internal server' },
+      { status: 500 }
+    )
   }
 }
