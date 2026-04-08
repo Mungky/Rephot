@@ -307,14 +307,13 @@ export default function LandingPage() {
               <Link href="/pricing" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Pricing</Link>
               <Link href="/about" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">About</Link>
               <Link href="/app" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">App</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Testimonials</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Terms</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Terms</Link>
+              <Link href="/privacy" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy</Link>
             </div>
           </div>
           
           <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-8">
-            &copy; {new Date().getFullYear()} Isometricon. All rights reserved.
+            &copy; {new Date().getFullYear()} Rephot. All rights reserved.
           </div>
         </div>
       </footer>

@@ -25,6 +25,7 @@ export async function POST(req: Request) {
       .from('token_packages')
       .select('*')
       .eq('id', packageId)
+      .eq('is_active', true)
       .single()
 
     if (packageError || !tokenPackage) {
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
     }
 
     // 4. Hitung harga setelah diskon (kalau ada)
-    const finalPrice = tokenPackage.price_idr - (tokenPackage.price_idr * (tokenPackage.discount_percent / 100))
+    const discountPct = tokenPackage.discount_pct ?? 0
+    const finalPrice = Math.round(tokenPackage.price_idr * (1 - discountPct / 100))
 
     // 5. Tembak API Mayar buat bikin Payment Link (Contoh payload standar Mayar)
     const mayarApiKey = process.env.MAYAR_API_KEY!
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
       paymentUrl: paymentData.link // Asumsi Mayar nge-return field 'link'
     }, { status: 200 })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Purchase API Error:', error)
     return NextResponse.json({ 
       success: false, 

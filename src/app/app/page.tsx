@@ -4,7 +4,11 @@ import { Lock } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ControlPanel } from '@/components/ControlPanel';
 import { MainStage } from '@/components/MainStage';
+import { LibraryProgressCard } from '@/components/LibraryProgressCard';
+import { QueueBusyNotice } from '@/components/QueueBusyNotice';
 import { useUser } from '@/hooks/useUser';
+
+const STORAGE_KEY = 'rephot_active_generation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -53,15 +57,55 @@ export default function AppPage() {
   const [selectedStyles, setSelectedStyles] = useState<string[]>(['Clean White']);
   const [ratio, setRatio] = useState('1:1');
   const [resolution, setResolution] = useState('4K');
-  const [generationId, setGenerationId] = useState<string | null>(null);
-  const [generationStatus, setGenerationStatus] = useState<GenerationStatus>('idle');
+  const [generationId, setGenerationId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).generationId ?? null;
+    } catch {}
+    return null;
+  });
+  const [generationStatus, setGenerationStatus] = useState<GenerationStatus>(() => {
+    if (typeof window === 'undefined') return 'idle';
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved && JSON.parse(saved).generationId) return 'processing';
+    } catch {}
+    return 'idle';
+  });
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [processingStartedAt, setProcessingStartedAt] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).startedAt ?? null;
+    } catch {}
+    return null;
+  });
+  const [processingStyle, setProcessingStyle] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) return JSON.parse(saved).style ?? '';
+    } catch {}
+    return '';
+  });
   const [libraryItems, setLibraryItems] = useState<GenerationRow[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
 
   const isGenerating = generationStatus === 'uploading' || generationStatus === 'processing';
+
+  const saveActiveGeneration = useCallback((genId: string, startedAt: number, style: string) => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ generationId: genId, startedAt, style }));
+    } catch {}
+  }, []);
+
+  const clearActiveGeneration = useCallback(() => {
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -138,10 +182,33 @@ export default function AppPage() {
     setUploadedPreviewUrl(null);
   };
 
-  // ---------- Supabase Realtime: watch generation status ----------
+  // ---------- Supabase Realtime + polling fallback ----------
   useEffect(() => {
     if (!generationId) return;
 
+    let cancelled = false;
+
+    const handleRowUpdate = (row: { status: string; output_images?: unknown; error_message?: string | null }) => {
+      if (cancelled) return;
+      const images = Array.isArray(row.output_images) ? row.output_images : [];
+
+      if (row.status === 'completed' && images.length) {
+        const url = firstOutputImageUrl(images);
+        if (url) setGeneratedImageUrl(url);
+        setGenerationStatus('completed');
+        setProcessingStartedAt(null);
+        clearActiveGeneration();
+        refreshBalance();
+        refreshLibrary();
+      } else if (row.status === 'failed') {
+        setGenerationStatus('failed');
+        setProcessingStartedAt(null);
+        clearActiveGeneration();
+        setErrorMessage(row.error_message || 'AI generation failed. Your tokens have not been deducted.');
+      }
+    };
+
+    // Realtime subscription
     const channel = supabase
       .channel(`gen-${generationId}`)
       .on(
@@ -152,34 +219,42 @@ export default function AppPage() {
           table: 'generations',
           filter: `id=eq.${generationId}`,
         },
-        (payload) => {
-          const row = payload.new as {
-            status: string;
-            output_images?: unknown[] | null;
-            error_message?: string | null;
-          };
-
-          if (row.status === 'completed' && row.output_images?.length) {
-            const first = row.output_images[0];
-            const url = typeof first === 'string'
-              ? first
-              : (first as { url?: string })?.url ?? null;
-            if (url) setGeneratedImageUrl(url);
-            setGenerationStatus('completed');
-            refreshBalance();
-            refreshLibrary();
-          } else if (row.status === 'failed') {
-            setGenerationStatus('failed');
-            setErrorMessage(row.error_message || 'AI generation failed. Your tokens have not been deducted.');
-          }
-        }
+        (payload) => handleRowUpdate(payload.new as { status: string; output_images?: unknown; error_message?: string | null })
       )
       .subscribe();
 
+    // Initial check — record might already be completed/failed
+    supabase
+      .from('generations')
+      .select('status, output_images, error_message')
+      .eq('id', generationId)
+      .single()
+      .then(({ data }) => {
+        if (data && (data.status === 'completed' || data.status === 'failed')) {
+          handleRowUpdate(data);
+        }
+      });
+
+    // Polling fallback every 8s in case Realtime misses an event
+    const pollInterval = setInterval(() => {
+      supabase
+        .from('generations')
+        .select('status, output_images, error_message')
+        .eq('id', generationId)
+        .single()
+        .then(({ data }) => {
+          if (data && (data.status === 'completed' || data.status === 'failed')) {
+            handleRowUpdate(data);
+          }
+        });
+    }, 8000);
+
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
-  }, [generationId, supabase, refreshBalance, refreshLibrary]);
+  }, [generationId, supabase, refreshBalance, refreshLibrary, clearActiveGeneration]);
 
   // ---------- handleGenerate: the core flow ----------
   const handleGenerate = async () => {
@@ -193,6 +268,9 @@ export default function AppPage() {
     setGenerationStatus('uploading');
     setErrorMessage(null);
     setGeneratedImageUrl(null);
+    const startTs = Date.now();
+    setProcessingStartedAt(startTs);
+    setProcessingStyle(selectedStyles[0] || 'Generation');
 
     try {
       const styleSlug = selectedStyles[0]?.toLowerCase().replace(/\s+/g, '_') || 'clean_white';
@@ -216,15 +294,20 @@ export default function AppPage() {
       if (!res.ok) {
         setErrorMessage(data.error || 'Generation failed');
         setGenerationStatus('failed');
+        setProcessingStartedAt(null);
+        clearActiveGeneration();
         return;
       }
 
       setGenerationId(data.generationId);
+      saveActiveGeneration(data.generationId, startTs, selectedStyles[0] || 'Generation');
 
     } catch (err) {
       console.error('handleGenerate error:', err);
       setErrorMessage('An unexpected error occurred. Please try again.');
       setGenerationStatus('failed');
+      setProcessingStartedAt(null);
+      clearActiveGeneration();
     }
   };
 
@@ -346,7 +429,7 @@ export default function AppPage() {
                 resolution={resolution}
                 generatedImageUrl={generatedImageUrl}
                 generationStatus={generationStatus}
-                onRegenerate={uploadedFile ? handleGenerate : undefined}
+                processingStartedAt={processingStartedAt}
               />
             </div>
           </div>
@@ -374,12 +457,22 @@ export default function AppPage() {
             {libraryLoading && libraryItems.length === 0 ? (
               <p className="text-sm text-neutral-500">Memuat riwayat…</p>
             ) : libraryItems.length === 0 ? (
-              <p className="text-sm text-neutral-500">Belum ada generasi. Hasil Wavespeed (CloudFront) akan muncul di sini setelah selesai.</p>
+              <p className="text-sm text-neutral-500">Belum ada generasi. Hasil akan muncul di sini setelah selesai.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {libraryItems.map((item) => {
+                  const isItemProcessing = item.status === 'processing' || item.status === 'pending';
+                  if (isItemProcessing) {
+                    const startTime = item.created_at ? new Date(item.created_at).getTime() : Date.now();
+                    return (
+                      <LibraryProgressCard
+                        key={item.id}
+                        style={item.style}
+                        startedAt={startTime}
+                      />
+                    );
+                  }
                   const thumb = firstOutputImageUrl(item.output_images);
-                  const meta = [item.resolution, item.aspect_ratio].filter(Boolean).join(' · ');
                   return (
                     <div
                       key={item.id}
@@ -393,17 +486,55 @@ export default function AppPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-400 text-xs text-center px-2">
-                          {item.status === 'completed' ? 'Tanpa URL output' : item.status}
+                          {item.status === 'completed' ? 'No output' : item.status}
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 pointer-events-none">
-                        <span className="text-white text-xs font-medium truncate">{item.style}</span>
-                        {meta ? (
-                          <span className="text-white/80 text-[10px] truncate">{meta}</span>
-                        ) : null}
-                        <span className="text-white/60 text-[9px] font-mono truncate mt-1" title={item.id}>
-                          {item.id}
-                        </span>
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
+                        <span className="text-white text-xs font-semibold truncate w-full text-center">{item.style}</span>
+                        <div className="flex items-center gap-2">
+                          {thumb && (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(thumb);
+                                  const blob = await res.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = `rephot-${item.id.slice(0, 8)}.png`;
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                } catch {
+                                  window.open(thumb, '_blank');
+                                }
+                              }}
+                              className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white/40 transition-colors"
+                              title="Download"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            </button>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Yakin ingin menghapus gambar ini? Tindakan ini tidak bisa dibatalkan.')) return;
+                              try {
+                                const res = await fetch(`/api/generations/${item.id}`, { method: 'DELETE' });
+                                const data = await res.json();
+                                if (res.ok && data.success) {
+                                  setLibraryItems((prev) => prev.filter((g) => g.id !== item.id));
+                                } else {
+                                  setLibraryError(data.error || 'Gagal menghapus. Coba lagi.');
+                                }
+                              } catch {
+                                setLibraryError('Gagal menghapus. Coba lagi.');
+                              }
+                            }}
+                            className="w-9 h-9 rounded-full bg-red-500/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-red-500/90 transition-colors"
+                            title="Delete"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -436,9 +567,9 @@ export default function AppPage() {
             </svg>
             <span suppressHydrationWarning className="text-sm font-bold text-amber-600">{mounted ? (tokenBalance ?? '—') : '—'}</span>
           </div>
-          <button className="text-sm font-medium bg-[#0A0A0A] text-white px-5 py-1.5 rounded-full hover:bg-neutral-800 transition-colors shadow-sm">
+          <Link href="/pricing" className="text-sm font-medium bg-[#0A0A0A] text-white px-5 py-1.5 rounded-full hover:bg-neutral-800 transition-colors shadow-sm">
             Top Up
-          </button>
+          </Link>
         </div>
 
         {/* Tengah: 3 Pilihan Menu */}
@@ -498,6 +629,8 @@ export default function AppPage() {
         </div>
 
       </div>
+
+      <QueueBusyNotice isGenerating={isGenerating} startedAt={processingStartedAt} />
 
     </div>
   );

@@ -1,79 +1,202 @@
 'use client';
 
 import Link from 'next/link';
-import { NavbarPublic } from "@/components/NavbarPublic";
+import { NavbarPublic } from '@/components/NavbarPublic';
+import { ArrowRight } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] font-['Outfit'] selection:bg-neutral-900 selection:text-white pb-20">
+    <div className="min-h-screen bg-white text-[#0A0A0A] font-['Outfit'] selection:bg-neutral-900 selection:text-white">
       
       <NavbarPublic activePage="about" />
 
-      <main className="pt-24 pb-32">
+      <main className="pt-24 pb-0">
         <div className="max-w-[1200px] mx-auto px-6">
           
+          {/* Hero */}
           <div className="text-center mb-24 max-w-4xl mx-auto">
             <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-neutral-200 bg-[#F9F9F9] mb-6 text-sm font-medium">
-              About us
+              Tentang Rephot
             </div>
-            <h1 className="font-['Bricolage_Grotesque'] text-[48px] md:text-[72px] font-extrabold tracking-tight mb-8 text-[#0A0A0A] leading-[1.1]">
-              Democratizing 3D design for everyone.
+            <h1 className="font-['Bricolage_Grotesque'] text-[40px] md:text-[64px] font-extrabold tracking-tight mb-8 text-[#0A0A0A] leading-[1.1]">
+              Foto random &rarr; Foto produk profesional, dalam detik.
             </h1>
-            <p className="text-[#888888] text-xl md:text-2xl leading-[1.6]">
-              We built Isometricon because creating consistent, high-quality 3D assets used to require years of software training and hours of rendering. Now, it takes seconds.
+            <p className="text-[#888888] text-lg md:text-xl leading-[1.7] max-w-3xl mx-auto">
+              Jutaan UMKM Indonesia jualan online tiap hari, tapi masih pakai foto seadanya dari kamera HP. Rephot hadir supaya siapapun bisa punya foto produk berkualitas studio &mdash; tanpa studio, tanpa fotografer, tanpa skill editing.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-16 items-center mb-32">
-            <div className="aspect-square bg-[#F9F9F9] rounded-[40px] border border-neutral-200 overflow-hidden relative group">
-              <img 
-                src="https://images.unsplash.com/photo-1600132806370-bf17e65e942f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxhcmNoaXRlY3R1cmUlMjBtaW5pbWFsfGVufDB8fHx8MTcyNDA5NTEwN3ww&ixlib=rb-4.1.0&q=80&w=1080" 
-                alt="Our Vision"
-                className="w-full h-full object-cover grayscale opacity-90 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
-              />
-            </div>
+          {/* Story + Stats */}
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-start mb-32">
+            
+            {/* Story */}
             <div>
-              <h2 className="font-['Bricolage_Grotesque'] text-[32px] md:text-[40px] font-bold tracking-tight mb-6 text-[#0A0A0A]">
-                Our Mission
+              <h2 className="font-['Bricolage_Grotesque'] text-[28px] md:text-[36px] font-bold tracking-tight mb-6 text-[#0A0A0A]">
+                Kenapa kami buat Rephot?
               </h2>
-              <div className="space-y-6 text-[#666666] text-lg leading-[1.7]">
+              <div className="space-y-5 text-[#666666] text-[16px] leading-[1.8]">
                 <p>
-                  Isometricon (formerly Rephot) started as a small internal tool to speed up landing page mockups. We found ourselves constantly searching for perfectly matching 3D icons, only to settle for mismatched, generic asset packs.
+                  Kami melihat satu pola yang terus berulang: produk bagus gagal menarik pembeli karena fotonya jelek. Seller di Tokopedia, Shopee, dan Instagram sering foto produk di atas kasur, di lantai, atau di meja berantakan. Bukan karena tidak peduli &mdash; tapi karena opsi lain terlalu mahal atau ribet.
                 </p>
                 <p>
-                  So we built a proprietary AI pipeline that generates perfectly lit, orthographic 3D models with transparent backgrounds. It ensures that whether you&apos;re generating a coffee cup or a cloud server, the lighting, shadows, and perspective are identical.
+                  Sewa fotografer? Minimal ratusan ribu per sesi. Belajar Photoshop? Butuh berminggu-minggu. Pakai jasa editing? Harus nunggu berhari-hari.
                 </p>
-                <p className="text-[#0A0A0A] font-medium border-l-2 border-black pl-6 my-8">
-                  &quot;Our goal is to make 3D assets as accessible and easy to generate as a simple web font.&quot;
+                <p>
+                  Rephot menyelesaikan ini dengan AI. Upload foto produk dari HP, pilih style, tunggu beberapa detik &mdash; dapat 2 variasi foto produk profesional. Harga? <strong>Rp 4.000 per foto</strong>. Lebih murah dari es teh.
+                </p>
+                <p className="text-[#0A0A0A] font-medium border-l-2 border-[#0A0A0A] pl-6 my-4">
+                  &quot;Kami percaya foto bagus bukan privilege orang yang punya budget besar. Itu hak semua orang yang jualan.&quot;
+                </p>
+              </div>
+            </div>
+
+            {/* Stat Cards */}
+            <div className="space-y-5">
+              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
+                <div className="font-['Bricolage_Grotesque'] text-[40px] md:text-[48px] font-extrabold text-[#0A0A0A] leading-none mb-2">
+                  Rp 4.000
+                </div>
+                <p className="text-[#888888] text-base font-medium">
+                  Per foto produk profesional. Lebih murah dari ongkir.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div className="bg-[#F9F9F9] rounded-[28px] p-7 border border-neutral-200">
+                  <div className="font-['Bricolage_Grotesque'] text-[36px] font-extrabold text-[#0A0A0A] leading-none mb-2">
+                    &lt;10s
+                  </div>
+                  <p className="text-[#888888] text-sm font-medium">
+                    Proses generate per foto
+                  </p>
+                </div>
+                <div className="bg-[#F9F9F9] rounded-[28px] p-7 border border-neutral-200">
+                  <div className="font-['Bricolage_Grotesque'] text-[36px] font-extrabold text-[#0A0A0A] leading-none mb-2">
+                    7
+                  </div>
+                  <p className="text-[#888888] text-sm font-medium">
+                    Preset style siap pakai
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div className="bg-[#F9F9F9] rounded-[28px] p-7 border border-neutral-200">
+                  <div className="font-['Bricolage_Grotesque'] text-[36px] font-extrabold text-[#0A0A0A] leading-none mb-2">
+                    2x
+                  </div>
+                  <p className="text-[#888888] text-sm font-medium">
+                    Variasi output tiap generate
+                  </p>
+                </div>
+                <div className="bg-[#F9F9F9] rounded-[28px] p-7 border border-neutral-200">
+                  <div className="font-['Bricolage_Grotesque'] text-[36px] font-extrabold text-[#0A0A0A] leading-none mb-2">
+                    8
+                  </div>
+                  <p className="text-[#888888] text-sm font-medium">
+                    Token gratis akun baru
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Values */}
+          <div className="mb-32">
+            <div className="text-center mb-12">
+              <h2 className="font-['Bricolage_Grotesque'] text-[32px] md:text-[44px] font-extrabold tracking-tight mb-4 text-[#0A0A0A]">
+                Yang kami pegang teguh
+              </h2>
+              <p className="text-[#888888] text-lg max-w-2xl mx-auto">
+                Prinsip di balik setiap keputusan produk yang kami buat.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h3 className="font-['Bricolage_Grotesque'] text-[22px] font-bold text-[#0A0A0A] mb-3">
+                  Cepat &amp; Mudah
+                </h3>
+                <p className="text-[#888888] leading-[1.7]">
+                  Upload, pilih style, selesai. Tidak ada learning curve, tidak perlu tutorial 30 menit. Kalau kamu bisa pakai Instagram, kamu bisa pakai Rephot.
+                </p>
+              </div>
+
+              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <h3 className="font-['Bricolage_Grotesque'] text-[22px] font-bold text-[#0A0A0A] mb-3">
+                  Untuk UMKM Indonesia
+                </h3>
+                <p className="text-[#888888] leading-[1.7]">
+                  Kami bukan tools premium untuk brand besar. Rephot didesain dari awal untuk seller kecil yang jualan di marketplace &mdash; dengan harga yang masuk akal.
+                </p>
+              </div>
+
+              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                </div>
+                <h3 className="font-['Bricolage_Grotesque'] text-[22px] font-bold text-[#0A0A0A] mb-3">
+                  Transparan &amp; Jujur
+                </h3>
+                <p className="text-[#888888] leading-[1.7]">
+                  Tidak ada langganan tersembunyi. Token tidak kadaluarsa. Kalau generate gagal karena sistem kami, token dikembalikan otomatis. Sesimpel itu.
+                </p>
+              </div>
+
+              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
+                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <h3 className="font-['Bricolage_Grotesque'] text-[22px] font-bold text-[#0A0A0A] mb-3">
+                  AI yang Benar-benar Kerja
+                </h3>
+                <p className="text-[#888888] leading-[1.7]">
+                  Bukan gimmick. Pipeline AI kami dibangun khusus untuk foto produk &mdash; lighting yang konsisten, background yang bersih, hasil yang siap upload ke marketplace.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="text-center mb-16">
-            <h2 className="font-['Bricolage_Grotesque'] text-[32px] md:text-[48px] font-bold tracking-tight mb-4 text-[#0A0A0A]">
-              Connect with us
-            </h2>
-            <p className="text-[#888888] text-lg max-w-2xl mx-auto mb-10">
-              We&apos;re a small, remote-first team building tools for designers and developers. Follow our journey.
-            </p>
-            <div className="flex items-center justify-center gap-6">
-              <a href="#" className="w-14 h-14 rounded-full bg-[#F9F9F9] border border-neutral-200 flex items-center justify-center text-[#0A0A0A] hover:bg-black hover:text-white transition-colors group">
-                <svg className="w-6 h-6 group-hover:-mt-1 transition-all" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              <a href="#" className="w-14 h-14 rounded-full bg-[#F9F9F9] border border-neutral-200 flex items-center justify-center text-[#0A0A0A] hover:bg-black hover:text-white transition-colors group">
-                <svg className="w-6 h-6 group-hover:-mt-1 transition-all" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-              </a>
-              <a href="#" className="w-14 h-14 rounded-full bg-[#F9F9F9] border border-neutral-200 flex items-center justify-center text-[#0A0A0A] hover:bg-black hover:text-white transition-colors group">
-                <svg className="w-6 h-6 group-hover:-mt-1 transition-all" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              </a>
-            </div>
-          </div>
-
         </div>
+
+        {/* CTA Section */}
+        <section className="bg-[#0A0A0A] py-24">
+          <div className="max-w-[800px] mx-auto px-6 text-center">
+            <h2 className="font-['Bricolage_Grotesque'] text-[32px] md:text-[48px] font-extrabold tracking-tight mb-6 text-white leading-[1.1]">
+              Coba gratis, langsung lihat hasilnya.
+            </h2>
+            <p className="text-neutral-400 text-lg mb-10 max-w-xl mx-auto">
+              Daftar sekarang dan dapat 8 token gratis &mdash; cukup untuk 2 foto produk profesional pertama kamu. Tanpa kartu kredit.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/app"
+                className="inline-flex items-center gap-2 bg-white text-[#0A0A0A] px-8 py-3.5 rounded-full font-semibold hover:bg-neutral-200 transition-colors"
+              >
+                Mulai Generate
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 text-neutral-400 hover:text-white px-6 py-3.5 rounded-full font-medium transition-colors border border-neutral-800 hover:border-neutral-600"
+              >
+                Lihat Harga
+              </Link>
+            </div>
+            <p className="text-neutral-600 text-sm mt-8">
+              Rephot adalah produk dari <strong className="text-neutral-500">Restard</strong> (Remula Start Digital)
+            </p>
+          </div>
+        </section>
       </main>
 
-      {/* FOOTER */}
+      {/* Footer */}
       <footer className="border-t border-neutral-200 bg-white pt-16 pb-8">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
@@ -82,19 +205,16 @@ export default function AboutPage() {
                 <img src="/RePhot.svg" alt="Rephot" className="h-8 w-auto invert" />
               </Link>
             </div>
-            
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
               <Link href="/pricing" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Pricing</Link>
               <Link href="/about" className="text-[#0A0A0A] font-medium text-sm transition-colors">About</Link>
               <Link href="/app" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">App</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Testimonials</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Terms</Link>
-              <Link href="#" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Terms</Link>
+              <Link href="/privacy" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy</Link>
             </div>
           </div>
-          
           <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-8">
-            &copy; {new Date().getFullYear()} Isometricon. All rights reserved.
+            &copy; {new Date().getFullYear()} Rephot. All rights reserved.
           </div>
         </div>
       </footer>

@@ -144,6 +144,32 @@ export async function POST(req: Request) {
 
     if (genError) throw genError
 
+    // type harus sesuai token_transactions_type_check di DB (mis. generate, purchase, welcome_bonus)
+    const { error: deductError } = await adminSupabase
+      .from('token_transactions')
+      .insert({
+        user_id: user.id,
+        amount: -4,
+        type: 'generate',
+        description: 'Generate foto',
+        reference_id: genRecord.id,
+      })
+
+    if (deductError) {
+      console.error('Token deduction error:', deductError)
+      await adminSupabase
+        .from('generations')
+        .update({
+          status: 'failed',
+          error_message: deductError.message,
+        })
+        .eq('id', genRecord.id)
+      return NextResponse.json(
+        { error: 'Gagal mencatat penggunaan token. Coba lagi.' },
+        { status: 500 }
+      )
+    }
+
     const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL!
 
     const webhookPayload: Record<string, unknown> = {
@@ -183,6 +209,19 @@ export async function POST(req: Request) {
       }
     } catch (n8nFetchError) {
       console.error('n8n Trigger Error:', n8nFetchError)
+
+      const { error: refundError } = await adminSupabase
+        .from('token_transactions')
+        .insert({
+          user_id: user.id,
+          amount: 4,
+          type: 'generate',
+          description: 'Refund - generate gagal',
+          reference_id: genRecord.id,
+        })
+      if (refundError) {
+        console.error('Token refund after n8n failure:', refundError)
+      }
 
       await adminSupabase
         .from('generations')
