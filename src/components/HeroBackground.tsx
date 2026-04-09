@@ -2,18 +2,18 @@
 
 import React from 'react';
 
-/** Foto produk (kuliner, fashion, skincare, elektronik) — format query sama seperti template awal */
+/** Output asli dari Rephot (Cloudinary) — di-scroll di kolom hero */
 const ARTIFACT_IMAGES = [
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1596462502278-27bfdc403348?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1556228720-195a672e8a03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1583292650601-6366587e5aa4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1526738549149-8e07ada60c0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1498049794561-7780e7231661?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
-  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713939/rephot-4d688673_fap58m.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713900/rephot-1775713871921_awdyji.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713716/rephot-a0b660cc_by1vkp.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713477/c5ae00df-80d0-4902-a6d8-63309508d900_itllof.jpg',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713471/rephot-11f71a02_qwteqo.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713431/cc00191e-d101-441e-b35a-fcd43e2821d4_fpahoj.jpg',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713431/rephot-9d877a2d_jsmtl0.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713431/c1065f79-ee19-4bc4-b444-05a7055c3912_v3avkp.jpg',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713431/rephot-bc02ee52_yifrss.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775708063/19ac6dd3-50aa-4809-b417-79637ec1edf6_pbn6sb.jpg',
 ];
 
 function getColumnImages(offset: number) {
@@ -43,7 +43,7 @@ export const HeroBackground: React.FC = () => {
           }
         `}
       </style>
-      <div className="absolute inset-0 z-0 overflow-hidden bg-[#0A0A0A] pointer-events-none p-4">
+      <div className="absolute inset-0 z-0 overflow-hidden bg-[#0A0A0A] pointer-events-none px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
         <div className="flex w-full h-full gap-4">
           <div className="flex-1 overflow-hidden relative opacity-70">
             <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 70s linear infinite' }}>

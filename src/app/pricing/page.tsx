@@ -140,7 +140,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] text-[#0A0A0A] font-['Outfit'] selection:bg-neutral-900 selection:text-white pb-20">
+    <div className="min-h-screen bg-[#F9F9F9] text-[#0A0A0A] font-['Outfit'] selection:bg-neutral-900 selection:text-white pb-8">
       <NavbarPublic activePage="pricing" />
 
       <main className="pt-24 pb-32">
@@ -269,9 +269,9 @@ export default function PricingPage() {
         </div>
       </main>
 
-      <footer className="border-t border-neutral-200 bg-white pt-16 pb-8">
+      <footer className="border-t border-neutral-200 bg-white pt-8 pb-6">
         <div className="max-w-[1200px] mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
             <div className="flex items-center gap-2">
               <Link href="/" className="flex items-center gap-2">
                 <img src="/RePhot.svg" alt="Rephot" className="h-8 w-auto invert" />
@@ -285,7 +285,7 @@ export default function PricingPage() {
               <Link href="/privacy" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy</Link>
             </div>
           </div>
-          <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-8">
+          <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-6">
             &copy; {new Date().getFullYear()} Rephot. All rights reserved.
           </div>
         </div>

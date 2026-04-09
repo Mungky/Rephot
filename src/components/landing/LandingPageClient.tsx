@@ -12,7 +12,6 @@ import {
   IconImages,
   IconPalette,
   IconPlay,
-  IconSparkles,
   IconUpload,
   IconWallet,
   IconWandSparkles,
@@ -21,14 +20,16 @@ import {
 
 /** Sebelum (kiri / area clip): ganti URL manual. */
 const DEMO_BEFORE_IMAGE =
-  'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775663582/rephot/uploads/2710a430-74b5-470b-a6b6-6bc9ec4ebd5b_1775663582561.jpg';
 /** Sesudah (kanan / full): ganti URL manual. */
 const DEMO_AFTER_IMAGE =
-  'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080';
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775708063/19ac6dd3-50aa-4809-b417-79637ec1edf6_pbn6sb.jpg';
 
 export function LandingPageClient() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [stats, setStats] = useState({ total_generations: 0 });
+  /** Hindari hydration mismatch pada <img> saat URL demo diganti / HMR chunk tidak sinkron. */
+  const [sliderReady, setSliderReady] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,6 +40,7 @@ export function LandingPageClient() {
   }, []);
 
   useEffect(() => {
+    setSliderReady(true);
     fetch('/api/stats')
       .then((r) => r.json())
       .then(setStats)
@@ -52,9 +54,9 @@ export function LandingPageClient() {
       <NavbarPublic transparent isScrolled={isScrolled} />
 
       <main>
-        <div className="relative min-h-[100vh] w-full flex flex-col justify-center overflow-hidden pt-32 bg-[#0A0A0A]">
+        <div className="relative min-h-[100vh] w-full flex flex-col justify-center overflow-hidden pt-16 bg-[#0A0A0A]">
           <HeroBackground />
-          <section className="relative z-20 max-w-[1200px] w-full mx-auto px-6 flex flex-col items-center text-center pt-10 pb-16 md:pb-20">
+          <section className="relative z-20 max-w-[1200px] w-full mx-auto px-6 flex flex-col items-center text-center pt-6 sm:pt-8 pb-16 md:pb-20">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-black/40 backdrop-blur-md mb-8 text-sm font-medium shadow-2xl text-neutral-300">
               <IconCamera className="w-4 h-4 text-amber-500 shrink-0" />
               <span>{countLabel} foto produk dihasilkan</span>
@@ -172,9 +174,9 @@ export function LandingPageClient() {
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div>
                 <h2 className="font-['Bricolage_Grotesque'] text-[28px] sm:text-[36px] md:text-[48px] font-extrabold tracking-tight mb-6 text-[#0A0A0A] leading-[1.1]">
-                  Sebelum kelihatan biasa.
+                  Masuk dengan kualitas biasa,
                   <br />
-                  Sesudah siap jualan.
+                  keluar dengan kualitas studio.
                 </h2>
                 <p className="text-[#888888] text-base md:text-lg mb-8 leading-relaxed font-['Outfit']">
                   Geser untuk bandingkan: foto produk dari HP vs hasil setelah Rephot — pencahayaan studio, background
@@ -196,64 +198,74 @@ export function LandingPageClient() {
                   Contoh produk
                 </div>
                 <div className="bg-[#F9F9F9] rounded-xl p-4 border border-neutral-200 mb-6 font-medium text-[#0A0A0A] text-sm md:text-base font-['Outfit']">
-                  &quot;Skincare botol kaca, foto dari meja kerja, background berantakan — mau jadi Clean White untuk
-                  Tokopedia.&quot;
+                  &quot;Mouse Wireless, foto dari background laptop, — mau jadi Cinematic dengan background komputer untuk foto produk.&quot;
                 </div>
 
                 <div
                   className="aspect-square bg-[#F9F9F9] rounded-2xl border border-neutral-200 overflow-hidden relative group"
                   style={{ '--position': '50%' } as CSSProperties}
                 >
-                  <img
-                    src={DEMO_AFTER_IMAGE}
-                    alt="Foto sesudah"
-                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  />
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ clipPath: 'polygon(0 0, var(--position) 0, var(--position) 100%, 0 100%)' }}
-                  >
-                    <img
-                      src={DEMO_BEFORE_IMAGE}
-                      alt="Foto sebelum"
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] pointer-events-none z-10"
-                    style={{ left: 'var(--position)', transform: 'translateX(-50%)' }}
-                  >
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center text-neutral-600 border border-neutral-200">
-                      <div className="flex gap-0.5">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m15 18-6-6 6-6" />
-                        </svg>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="m9 18 6-6-6-6" />
-                        </svg>
+                  {sliderReady ? (
+                    <>
+                      <img
+                        src={DEMO_AFTER_IMAGE}
+                        alt="Foto sesudah"
+                        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                      />
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ clipPath: 'polygon(0 0, var(--position) 0, var(--position) 100%, 0 100%)' }}
+                      >
+                        <img
+                          src={DEMO_BEFORE_IMAGE}
+                          alt="Foto sebelum"
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
                       </div>
+
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-white shadow-[0_0_10px_rgba(0,0,0,0.5)] pointer-events-none z-10"
+                        style={{ left: 'var(--position)', transform: 'translateX(-50%)' }}
+                      >
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 bg-white rounded-full shadow-lg flex items-center justify-center text-neutral-600 border border-neutral-200">
+                          <div className="flex gap-0.5">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m15 18-6-6 6-6" />
+                            </svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m9 18 6-6-6-6" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        defaultValue="50"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
+                        onInput={(e) => {
+                          e.currentTarget.parentElement?.style.setProperty('--position', `${e.currentTarget.value}%`);
+                        }}
+                      />
+
+                      <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Sebelum
+                      </div>
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold text-[#0A0A0A] shadow-sm border border-black/5 flex items-center gap-1.5 pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <IconZap className="w-3.5 h-3.5 text-amber-500" />
+                        Sesudah
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      className="absolute inset-0 flex items-center justify-center bg-[#F0F0F0] text-[#888888] text-sm font-['Outfit']"
+                      aria-hidden
+                    >
+                      Memuat preview…
                     </div>
-                  </div>
-
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    defaultValue="50"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20"
-                    onInput={(e) => {
-                      e.currentTarget.parentElement?.style.setProperty('--position', `${e.currentTarget.value}%`);
-                    }}
-                  />
-
-                  <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold text-white shadow-sm pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    Sebelum
-                  </div>
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold text-[#0A0A0A] shadow-sm border border-black/5 flex items-center gap-1.5 pointer-events-none z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <IconZap className="w-3.5 h-3.5 text-amber-500" />
-                    Sesudah
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -310,18 +322,7 @@ export function LandingPageClient() {
             <p className="text-[#888888] text-base md:text-lg mt-3 font-['Outfit']">Kenapa Rephot?</p>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-6 md:gap-8">
-            <div className="bg-[#F9F9F9] rounded-2xl p-8 border border-neutral-200">
-              <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6">
-                <IconSparkles className="w-6 h-6 text-[#0A0A0A]" />
-              </div>
-              <h3 className="text-xl font-bold text-[#0A0A0A] mb-3 font-['Bricolage_Grotesque']">
-                AI yang ngerti produk Indonesia
-              </h3>
-              <p className="text-[#888888] leading-relaxed font-['Outfit']">
-                Dilatih dengan konteks lokal. Ngerti jilbab, frozen food, kerajinan tangan.
-              </p>
-            </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             <div className="bg-[#F9F9F9] rounded-2xl p-8 border border-neutral-200">
               <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6">
                 <IconPalette className="w-6 h-6 text-[#0A0A0A]" />
@@ -337,21 +338,21 @@ export function LandingPageClient() {
                 <IconImages className="w-6 h-6 text-[#0A0A0A]" />
               </div>
               <h3 className="text-xl font-bold text-[#0A0A0A] mb-3 font-['Bricolage_Grotesque']">
-                2 Variasi Setiap Generate
+                Memperbaiki detail produk
               </h3>
               <p className="text-[#888888] leading-relaxed font-['Outfit']">
-                Selalu dapat 2 pilihan output berbeda. Pilih yang paling cocok.
+                Merapikan detail produk dan menyetel background yang pas — supaya satu foto siap dipakai di etalase online.
               </p>
             </div>
-            <div className="bg-[#F9F9F9] rounded-2xl p-8 border border-neutral-200">
+            <div className="bg-[#F9F9F9] rounded-2xl p-8 border border-neutral-200 sm:col-span-2 lg:col-span-1">
               <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6">
                 <IconWallet className="w-6 h-6 text-[#0A0A0A]" />
               </div>
               <h3 className="text-xl font-bold text-[#0A0A0A] mb-3 font-['Bricolage_Grotesque']">
-                Mulai Gratis, Bayar Per Foto
+                Mulai gratis, bayar sesuai pakai
               </h3>
               <p className="text-[#888888] leading-relaxed font-['Outfit']">
-                8 token gratis langsung aktif. Setelah itu Rp 4.000 per foto. Tidak ada langganan bulanan.
+                Daftar dan coba dulu tanpa kartu kredit. Token tidak kadaluarsa — pakai kapan saja kamu butuh foto baru.
               </p>
             </div>
           </div>
@@ -360,10 +361,10 @@ export function LandingPageClient() {
         <section className="bg-[#0A0A0A] text-white py-20 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 text-center">
             <h2 className="font-['Bricolage_Grotesque'] text-[28px] sm:text-[40px] md:text-[48px] font-extrabold tracking-tight mb-4">
-              Rp 4.000 per foto.
+              Siap tingkatkan foto produkmu?
             </h2>
             <p className="text-neutral-400 text-base md:text-lg max-w-xl mx-auto mb-10 font-['Outfit']">
-              Atau mulai gratis dengan 2 foto bonus. Token tidak kadaluarsa.
+              Mulai gratis, pilih paket saat kamu butuh lebih banyak. Detail harga ada di halaman pricing.
             </p>
             <Link
               href="/pricing"
@@ -372,7 +373,6 @@ export function LandingPageClient() {
               Lihat Paket Lengkap
               <IconArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <p className="text-neutral-500 text-sm mt-10 font-['Outfit']">Sudah dipercaya oleh UMKM Indonesia</p>
           </div>
         </section>
       </main>

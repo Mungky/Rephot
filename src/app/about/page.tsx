@@ -42,7 +42,7 @@ export default function AboutPage() {
                   Sewa fotografer? Minimal ratusan ribu per sesi. Belajar Photoshop? Butuh berminggu-minggu. Pakai jasa editing? Harus nunggu berhari-hari.
                 </p>
                 <p>
-                  Rephot menyelesaikan ini dengan AI. Upload foto produk dari HP, pilih style, tunggu beberapa detik &mdash; dapat 2 variasi foto produk profesional. Harga? <strong>Rp 4.000 per foto</strong>. Lebih murah dari es teh.
+                  Rephot menyelesaikan ini dengan AI. Upload foto produk dari HP, pilih style, tunggu beberapa detik &mdash; dapat variasi foto produk profesional siap dipakai di etalase online.
                 </p>
                 <p className="text-[#0A0A0A] font-medium border-l-2 border-[#0A0A0A] pl-6 my-4">
                   &quot;Kami percaya foto bagus bukan privilege orang yang punya budget besar. Itu hak semua orang yang jualan.&quot;
@@ -52,15 +52,6 @@ export default function AboutPage() {
 
             {/* Stat Cards */}
             <div className="space-y-5">
-              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
-                <div className="font-['Bricolage_Grotesque'] text-[40px] md:text-[48px] font-extrabold text-[#0A0A0A] leading-none mb-2">
-                  Rp 4.000
-                </div>
-                <p className="text-[#888888] text-base font-medium">
-                  Per foto produk profesional. Lebih murah dari ongkir.
-                </p>
-              </div>
-
               <div className="grid grid-cols-2 gap-5">
                 <div className="bg-[#F9F9F9] rounded-[28px] p-7 border border-neutral-200">
                   <div className="font-['Bricolage_Grotesque'] text-[36px] font-extrabold text-[#0A0A0A] leading-none mb-2">
@@ -112,7 +103,7 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
                 <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -122,18 +113,6 @@ export default function AboutPage() {
                 </h3>
                 <p className="text-[#888888] leading-[1.7]">
                   Upload, pilih style, selesai. Tidak ada learning curve, tidak perlu tutorial 30 menit. Kalau kamu bisa pakai Instagram, kamu bisa pakai Rephot.
-                </p>
-              </div>
-
-              <div className="bg-[#F9F9F9] rounded-[28px] p-8 border border-neutral-200">
-                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-neutral-100 flex items-center justify-center mb-5">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#0A0A0A]"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                </div>
-                <h3 className="font-['Bricolage_Grotesque'] text-[22px] font-bold text-[#0A0A0A] mb-3">
-                  Untuk UMKM Indonesia
-                </h3>
-                <p className="text-[#888888] leading-[1.7]">
-                  Kami bukan tools premium untuk brand besar. Rephot didesain dari awal untuk seller kecil yang jualan di marketplace &mdash; dengan harga yang masuk akal.
                 </p>
               </div>
 
@@ -197,9 +176,9 @@ export default function AboutPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200 bg-white pt-16 pb-8">
+      <footer className="border-t border-neutral-200 bg-white pt-8 pb-6">
         <div className="max-w-[1200px] mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
             <div className="flex items-center gap-2">
               <Link href="/" className="flex items-center gap-2">
                 <img src="/RePhot.svg" alt="Rephot" className="h-8 w-auto invert" />
@@ -213,7 +192,7 @@ export default function AboutPage() {
               <Link href="/privacy" className="text-[#888888] hover:text-[#0A0A0A] text-sm font-medium transition-colors">Privacy</Link>
             </div>
           </div>
-          <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-8">
+          <div className="text-center text-[#888888] text-sm border-t border-neutral-100 pt-6">
             &copy; {new Date().getFullYear()} Rephot. All rights reserved.
           </div>
         </div>
