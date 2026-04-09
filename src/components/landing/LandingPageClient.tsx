@@ -136,13 +136,13 @@ export function LandingPageClient() {
             </a>
 
             <a
-              href="https://youtube.com"
+              href="https://www.youtube.com/watch?v=e288yonwcV4"
               target="_blank"
               rel="noopener noreferrer"
               className="relative group block w-full max-w-[600px] rounded-[24px] overflow-hidden shadow-2xl shadow-black/10 border-4 border-white bg-[#0A0A0A] transition-transform hover:-translate-y-2 duration-300"
             >
               <video
-                src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+                src="https://www.youtube.com/watch?v=e288yonwcV4"
                 autoPlay
                 loop
                 muted
