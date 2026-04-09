@@ -2,17 +2,18 @@
 
 import React from 'react';
 
+/** Foto produk (kuliner, fashion, skincare, elektronik) — format query sama seperti template awal */
 const ARTIFACT_IMAGES = [
-  "https://images.unsplash.com/photo-1707068226685-27a15039f19b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwYXJ0aWZhY3QlMjBtdXNldW18ZW58MXx8fHwxNzc1NDYzOTg4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1737387818872-b476fa023874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwcmVsaWMlMjBzdG9uZXxlbnwxfHx8fDE3NzU0NjM5ODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1772149902755-5fc60d6350df?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvcm5hdGUlMjBzY3VscHR1cmUlMjBkYXJrfGVufDF8fHx8MTc3NTQ2Mzk4OXww&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1562162115-54cc44600875?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkYXJrJTIwY3J5c3RhbCUyMG1hY3JvfGVufDF8fHx8MTc3NTQ2Mzk4OXww&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1748838602679-32d82ccf188e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxteXN0aWNhbCUyMGFydGlmYWN0JTIwZ2xvd2luZ3xlbnwxfHx8fDE3NzU0NjM5ODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1762275194722-3a8c106adb0c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnb3RoaWMlMjBzY3VscHR1cmUlMjBhcmNoaXRlY3R1cmV8ZW58MXx8fHwxNzc1MzgyODE2fDA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1575783383766-d47eae17de04?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwbXVzZXVtJTIwZ29sZHxlbnwxfHx8fDE3NzU0NjM5OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1761414140137-9d6a3c704a8d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxteXN0aWNhbCUyMGpld2VsJTIwZGFya3xlbnwxfHx8fDE3NzU0NjM5OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1626470408813-f0059745d58b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcnlzdGFsJTIwZ2VvZGUlMjBzdG9uZXxlbnwxfHx8fDE3NzU0NjM5OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-  "https://images.unsplash.com/photo-1601458886250-2e6f975296a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbnRpcXVlJTIwcmVsaWMlMjBtdXNldW18ZW58MXx8fHwxNzc1NDYzOTkyfDA&ixlib=rb-4.1.0&q=80&w=1080"
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1596462502278-27bfdc403348?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1556228720-195a672e8a03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1583292650601-6366587e5aa4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1526738549149-8e07ada60c0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1498049794561-7780e7231661?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
 ];
 
 function getColumnImages(offset: number) {
@@ -90,8 +91,14 @@ export const HeroBackground: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'radial-gradient(circle at center, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.9) 80%, rgba(10,10,10,1) 100%)' }} />
+
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.9) 80%, rgba(10,10,10,1) 100%)',
+          }}
+        />
         <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-[#0A0A0A] to-transparent z-10" />
       </div>
     </>

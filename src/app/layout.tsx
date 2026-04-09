@@ -26,7 +26,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Rephot",
-  description: "Generate consistent 3D isometric icons from text or photos.",
+  description:
+    "Ubah foto produk dari HP jadi foto studio profesional dengan AI — untuk UMKM dan seller marketplace.",
+  icons: {
+    icon: [{ url: "/RePhot.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({

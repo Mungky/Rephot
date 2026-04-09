@@ -190,7 +190,7 @@ export default function AboutPage() {
               </Link>
             </div>
             <p className="text-neutral-600 text-sm mt-8">
-              Rephot adalah produk dari <strong className="text-neutral-500">Restard</strong> (Remula Start Digital)
+              Rephot adalah produk dari <strong className="text-neutral-500">Restard</strong>
             </p>
           </div>
         </section>
