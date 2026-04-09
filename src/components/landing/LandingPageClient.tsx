@@ -63,8 +63,8 @@ export function LandingPageClient() {
             </div>
 
             <h1 className="font-['Bricolage_Grotesque'] text-[40px] sm:text-[48px] md:text-[72px] font-extrabold leading-[1.1] tracking-tight mb-2">
-              <span className="block text-white">Foto Jelek?</span>
-              <span className="block text-amber-500">Jadi Foto Studio.</span>
+              <span className="block text-white">Foto Studio Repot</span>
+              <span className="block text-amber-500">Foto Studio, Rephot</span>
             </h1>
 
             <p className="text-neutral-300 text-base sm:text-lg md:text-xl max-w-2xl mt-6 mb-10 font-['Outfit'] leading-relaxed">
