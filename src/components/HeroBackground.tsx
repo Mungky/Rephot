@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 
 /** Output asli dari Rephot (Cloudinary) — di-scroll di kolom hero */
 const ARTIFACT_IMAGES = [
-  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713939/rephot-4d688673_fap58m.png',
-  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713900/rephot-1775713871921_awdyji.png',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775728077/rephot-2fe867c4_1_udqrbw.jpg',
+  'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775728337/rephot-6d284fe8_ihhtcc.png',
   'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713716/rephot-a0b660cc_by1vkp.png',
   'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713477/c5ae00df-80d0-4902-a6d8-63309508d900_itllof.jpg',
   'https://res.cloudinary.com/dkhb9rkke/image/upload/v1775713471/rephot-11f71a02_qwteqo.png',
