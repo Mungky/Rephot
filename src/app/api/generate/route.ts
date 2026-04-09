@@ -20,7 +20,7 @@ function parseAspectRatio(v: unknown): string {
 }
 
 function parseResolution(v: unknown): string {
-  const s = typeof v === 'string' && v.trim() ? v.trim().toLowerCase() : '4k'
+  const s = typeof v === 'string' && v.trim() ? v.trim().toLowerCase() : '1k'
   return s
 }
 

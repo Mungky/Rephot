@@ -57,7 +57,7 @@ export default function AppPage() {
   const [customPrompt, setCustomPrompt] = useState('');
   const [selectedStyles, setSelectedStyles] = useState<string[]>(['Clean White']);
   const [ratio, setRatio] = useState('1:1');
-  const [resolution, setResolution] = useState('4K');
+  const [resolution, setResolution] = useState('1K');
   const [generationId, setGenerationId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     try {
