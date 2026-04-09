@@ -12,6 +12,7 @@ const STORAGE_KEY = 'rephot_active_generation';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { getDisplayName } from '@/lib/display-name';
 
 type GenerationStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -116,12 +117,10 @@ export default function AppPage() {
   useEffect(() => {
     setMounted(true);
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsProfileDropdownOpen(false);
-      }
-      if (mobileDropdownRef.current && !mobileDropdownRef.current.contains(event.target as Node)) {
-        setIsProfileDropdownOpen(false);
-      }
+      const target = event.target as Node;
+      const inDesktop = dropdownRef.current?.contains(target) ?? false;
+      const inMobile = mobileDropdownRef.current?.contains(target) ?? false;
+      if (!inDesktop && !inMobile) setIsProfileDropdownOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -352,7 +351,7 @@ export default function AppPage() {
           </div>
 
           {/* Profile (Mobile Only) */}
-          <div className="md:hidden relative" ref={mobileDropdownRef}>
+          <div className="md:hidden relative z-30 isolate" ref={mobileDropdownRef}>
             <div 
               className="flex items-center cursor-pointer shrink-0"
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
@@ -365,17 +364,25 @@ export default function AppPage() {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-xs font-bold text-neutral-600">
-                  {user?.email?.[0]?.toUpperCase() || '?'}
+                  {user ? getDisplayName(user).charAt(0).toUpperCase() : '?'}
                 </div>
               )}
             </div>
 
             {isProfileDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-50">
-                <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                  Change Profile Photo
-                </button>
-                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-50 transition-colors">
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-[200] pointer-events-auto">
+                <Link
+                  href="/profile"
+                  className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsProfileDropdownOpen(false);
+                    router.push('/profile');
+                  }}
+                >
+                  Profil
+                </Link>
+                <button type="button" onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-50 transition-colors">
                   Logout
                 </button>
               </div>
@@ -396,7 +403,7 @@ export default function AppPage() {
 
       {/* Main Content Area */}
       {activeTab === 'generate' && (
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-0">
           
           {/* Left Panel: Control Desk */}
           <div className="flex-1 md:flex-none w-full md:w-[320px] lg:w-[350px] xl:w-[400px] md:h-full overflow-y-auto bg-white border-t md:border-t-0 md:border-r border-neutral-200/80 shadow-[1px_0_10px_rgba(0,0,0,0.02)] z-10 flex flex-col order-2 md:order-1">
@@ -438,7 +445,7 @@ export default function AppPage() {
 
       {/* Library View */}
       {activeTab === 'library' && (
-        <div className="flex-1 overflow-y-auto bg-neutral-50/50 p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto bg-neutral-50/50 p-4 md:p-8 relative z-0">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between gap-4 mb-4 md:mb-6">
               <h2 className="text-xl md:text-2xl font-bold text-neutral-900">Your Library</h2>
@@ -547,7 +554,7 @@ export default function AppPage() {
 
       {/* Community View */}
       {activeTab === 'community' && (
-        <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50/50 min-w-0 p-8 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50/50 min-w-0 p-8 text-center relative z-0">
           <div className="w-20 h-20 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center mb-6">
             <Lock className="w-8 h-8 text-neutral-300" />
           </div>
@@ -557,7 +564,7 @@ export default function AppPage() {
       )}
 
       {/* Bottom Navigation */}
-      <div className="flex-none h-auto md:h-[72px] py-4 md:py-0 border-t border-neutral-200/80 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20 flex flex-col md:flex-row items-center justify-center md:justify-between px-4 md:px-6 relative gap-4 md:gap-0">
+      <div className="flex-none h-auto md:h-[72px] py-4 md:py-0 border-t border-neutral-200/80 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-40 flex flex-col md:flex-row items-center justify-center md:justify-between px-4 md:px-6 relative gap-4 md:gap-0">
         
         {/* Pojok Kiri: Sisa Credit & Tombol Top Up (Desktop) */}
         <div className="hidden md:flex items-center gap-3">
@@ -572,8 +579,9 @@ export default function AppPage() {
           </Link>
         </div>
 
-        {/* Tengah: 3 Pilihan Menu */}
-        <div className="w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center justify-center gap-1 bg-neutral-100 p-1.5 rounded-full border border-neutral-200/60 shadow-inner overflow-x-auto shrink-0">
+        {/* Tengah: pointer-events-none supaya area kosong di luar pill tidak menangkap klik (mis. ke dropdown Profil di atas) */}
+        <div className="w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center justify-center shrink-0 pointer-events-none">
+          <div className="flex items-center justify-center gap-1 bg-neutral-100 p-1.5 rounded-full border border-neutral-200/60 shadow-inner overflow-x-auto pointer-events-auto max-w-full">
           <button 
             onClick={() => setActiveTab('generate')}
             className={`px-4 sm:px-6 py-1.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${activeTab === 'generate' ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-neutral-200/50 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 hover:bg-black/5 font-medium border border-transparent'}`}
@@ -592,16 +600,17 @@ export default function AppPage() {
           >
             Community
           </button>
+          </div>
         </div>
 
         {/* Pojok Kanan: Username & Profile Photo (Desktop) */}
-        <div className="hidden md:flex relative" ref={dropdownRef}>
+        <div className="hidden md:flex relative z-50 isolate pointer-events-auto" ref={dropdownRef}>
           <div 
             className="flex items-center gap-3 cursor-pointer hover:bg-neutral-50 p-1 rounded-full pl-4 transition-colors border border-transparent hover:border-neutral-200"
             onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
           >
             <span className="text-sm font-semibold text-neutral-800">
-              {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Alex Studio'}
+              {user ? getDisplayName(user) : 'Pengguna'}
             </span>
             {user?.user_metadata?.avatar_url ? (
               <img 
@@ -611,17 +620,25 @@ export default function AppPage() {
               />
             ) : (
               <div className="w-9 h-9 rounded-full bg-neutral-200 border border-neutral-300 flex items-center justify-center text-sm font-bold text-neutral-600">
-                {user?.email?.[0]?.toUpperCase() || 'A'}
+                {user ? getDisplayName(user).charAt(0).toUpperCase() : 'P'}
               </div>
             )}
           </div>
 
           {isProfileDropdownOpen && (
-            <div className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-50">
-              <button className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors">
-                Change Profile Photo
-              </button>
-              <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-50 transition-colors">
+            <div className="absolute bottom-full right-0 mb-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-xl py-1 z-[200] pointer-events-auto">
+              <Link
+                href="/profile"
+                className="block w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsProfileDropdownOpen(false);
+                  router.push('/profile');
+                }}
+              >
+                Profil
+              </Link>
+              <button type="button" onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-50 transition-colors">
                 Logout
               </button>
             </div>

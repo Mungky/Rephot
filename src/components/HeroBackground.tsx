@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 /** Output asli dari Rephot (Cloudinary) — di-scroll di kolom hero */
 const ARTIFACT_IMAGES = [
@@ -23,6 +23,12 @@ function getColumnImages(offset: number) {
 }
 
 export const HeroBackground: React.FC = () => {
+  /** Kolom gambar hanya setelah mount supaya SSR dan paint pertama selalu sama (hindari hydration mismatch bila chunk dev/HMR tidak sinkron dengan HTML). */
+  const [columnsReady, setColumnsReady] = useState(false);
+  useEffect(() => {
+    setColumnsReady(true);
+  }, []);
+
   const col1 = getColumnImages(0);
   const col2 = getColumnImages(2);
   const col3 = getColumnImages(5);
@@ -45,51 +51,61 @@ export const HeroBackground: React.FC = () => {
       </style>
       <div className="absolute inset-0 z-0 overflow-hidden bg-[#0A0A0A] pointer-events-none px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
         <div className="flex w-full h-full gap-4">
-          <div className="flex-1 overflow-hidden relative opacity-70">
-            <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 70s linear infinite' }}>
-              {col1.map((src, i) => (
-                <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+          {columnsReady ? (
+            <>
+              <div className="flex-1 overflow-hidden relative opacity-70">
+                <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 70s linear infinite' }}>
+                  {col1.map((src, i) => (
+                    <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden relative opacity-70">
-            <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollUp 80s linear infinite' }}>
-              {col2.map((src, i) => (
-                <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+              </div>
+              <div className="flex-1 overflow-hidden relative opacity-70">
+                <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollUp 80s linear infinite' }}>
+                  {col2.map((src, i) => (
+                    <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden relative opacity-70">
-            <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 60s linear infinite' }}>
-              {col3.map((src, i) => (
-                <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+              </div>
+              <div className="flex-1 overflow-hidden relative opacity-70">
+                <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 60s linear infinite' }}>
+                  {col3.map((src, i) => (
+                    <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden relative opacity-70">
-            <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollUp 90s linear infinite' }}>
-              {col4.map((src, i) => (
-                <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+              </div>
+              <div className="flex-1 overflow-hidden relative opacity-70">
+                <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollUp 90s linear infinite' }}>
+                  {col4.map((src, i) => (
+                    <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 overflow-hidden relative opacity-70">
-            <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 76s linear infinite' }}>
-              {col5.map((src, i) => (
-                <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
-                  <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+              </div>
+              <div className="flex-1 overflow-hidden relative opacity-70">
+                <div className="flex flex-col gap-4 w-full" style={{ animation: 'scrollDown 76s linear infinite' }}>
+                  {col5.map((src, i) => (
+                    <div key={i} className="w-full aspect-[1/1.2] relative rounded-2xl overflow-hidden">
+                      <img src={src} alt="" className="w-full h-full object-cover grayscale brightness-75 contrast-125" />
+                    </div>
+                  ))}
                 </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex-1 overflow-hidden relative opacity-70 bg-[#0A0A0A]" aria-hidden />
               ))}
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         <div

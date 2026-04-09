@@ -62,3 +62,44 @@ export async function uploadInputImage(
     Readable.from(buffer).pipe(stream)
   })
 }
+
+/** Upload foto profil (avatar) ke Cloudinary — folder terpisah dari input generate. */
+export async function uploadAvatarImage(
+  buffer: Buffer,
+  opts: { userId: string }
+): Promise<string> {
+  if (!isCloudinaryConfigured()) {
+    throw new Error('CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET belum diset')
+  }
+  applyConfig()
+
+  const baseFolder = (
+    process.env.CLOUDINARY_UPLOAD_FOLDER || 'rephot/uploads'
+  ).replace(/^\/+|\/+$/g, '')
+  const folder = `${baseFolder}/avatars`.replace(/\/+/g, '/')
+  const publicId = `avatar_${opts.userId.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}`
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: publicId,
+        resource_type: 'image',
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error)
+          return
+        }
+        if (!result?.secure_url) {
+          reject(new Error('Cloudinary: respons tanpa secure_url'))
+          return
+        }
+        resolve(result.secure_url)
+      }
+    )
+
+    Readable.from(buffer).pipe(stream)
+  })
+}
