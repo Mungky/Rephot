@@ -26,6 +26,14 @@ function parseResolution(v: unknown): string {
 
 export async function POST(req: Request) {
   try {
+    const n8nWebhookSecret = process.env.N8N_WEBHOOK_SECRET
+    if (!n8nWebhookSecret) {
+      return NextResponse.json(
+        { error: 'Webhook secret is missing' },
+        { status: 500 }
+      )
+    }
+
     const supabase = await createClient()
     const {
       data: { user },
@@ -188,7 +196,7 @@ export async function POST(req: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Webhook-Secret': process.env.N8N_WEBHOOK_SECRET || '',
+          'x-webhook-secret': n8nWebhookSecret,
         },
         body: JSON.stringify(webhookPayload),
       })

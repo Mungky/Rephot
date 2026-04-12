@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 
@@ -73,24 +74,53 @@ function resolveEmail(body: Record<string, unknown>): string | null {
   return null
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const rawBody = await req.text()
-    const body = JSON.parse(rawBody)
+    const rawBody = await request.text()
 
-    console.log('📩 [MAYAR] event:', body.event, '| data.status:', body.data?.status, '| productName:', body.data?.productName)
-
-    // --- Signature verification ---
-    // Mayar sends a plain token in x-callback-token, NOT an HMAC signature.
-    const callbackToken = req.headers.get('x-callback-token') || ''
-    const secret = process.env.MAYAR_WEBHOOK_SECRET
-
-    if (!secret) {
-      console.warn('⚠️ MAYAR_WEBHOOK_SECRET not set — skipping verification')
-    } else if (callbackToken !== secret) {
-      console.error('❌ Token mismatch. Got:', callbackToken.slice(0, 16) + '...')
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    const webhookSecret = process.env.MAYAR_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      return new Response('Webhook secret is missing', { status: 500 })
     }
+
+    const signatureHeader =
+      request.headers.get('x-mayar-signature') ??
+      request.headers.get('webhook-signature')
+
+    if (!signatureHeader) {
+      return new Response('Invalid signature', { status: 401 })
+    }
+
+    let signature = signatureHeader.trim()
+    if (signature.toLowerCase().startsWith('sha256=')) {
+      signature = signature.slice(7).trim()
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(rawBody)
+      .digest('hex')
+
+    const sigNorm = signature.toLowerCase()
+    const expNorm = expectedSignature.toLowerCase()
+    const sigBuf = Buffer.from(sigNorm, 'hex')
+    const expBuf = Buffer.from(expNorm, 'hex')
+    if (
+      sigBuf.length !== expBuf.length ||
+      sigBuf.length === 0 ||
+      !crypto.timingSafeEqual(sigBuf, expBuf)
+    ) {
+      return new Response('Invalid signature', { status: 401 })
+    }
+
+    let body: Record<string, unknown>
+    try {
+      body = JSON.parse(rawBody) as Record<string, unknown>
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+
+    console.log('📩 [MAYAR] event:', body.event, '| data.status:', body.data?.status, '| productName:', (body.data as Record<string, unknown> | undefined)?.productName)
 
     // --- Check if payment is successful ---
     const event = String(body.event ?? '')
