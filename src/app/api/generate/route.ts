@@ -44,6 +44,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
+    const { count, error: rateLimitError } = await supabase
+      .from('generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', oneMinuteAgo)
+
+    if (rateLimitError) throw rateLimitError
+    if ((count ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak request. Silakan tunggu 1 menit.' },
+        { status: 429 }
+      )
+    }
+
     const contentType = req.headers.get('content-type') || ''
 
     let imageUrl: string | null = null
