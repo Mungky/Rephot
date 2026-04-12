@@ -9,6 +9,11 @@ function getAdminSupabase() {
   )
 }
 
+interface MayarWebhookPayload {
+  event: string
+  data?: Record<string, any>
+}
+
 /**
  * Extract token count from Mayar productName.
  * Mayar sends names like "Rephot - 20 Token", "Rephot - 50 Token", etc.
@@ -19,7 +24,9 @@ function resolveTokensFromProductName(name: string): number | null {
   return null
 }
 
-function resolveTokensFromPayload(body: Record<string, unknown>): number | null {
+function resolveTokensFromPayload(
+  body: MayarWebhookPayload & Record<string, unknown>
+): number | null {
   const data = (body.data && typeof body.data === 'object') ? body.data as Record<string, unknown> : null
 
   // 1. Try metadata (API-created payments)
@@ -56,7 +63,7 @@ function resolveTokensFromPayload(body: Record<string, unknown>): number | null 
   return null
 }
 
-function resolveEmail(body: Record<string, unknown>): string | null {
+function resolveEmail(body: MayarWebhookPayload & Record<string, unknown>): string | null {
   const data = (body.data && typeof body.data === 'object') ? body.data as Record<string, unknown> : null
   const candidates = [
     data?.customerEmail,
@@ -113,14 +120,22 @@ export async function POST(request: Request) {
       return new Response('Invalid signature', { status: 401 })
     }
 
-    let body: Record<string, unknown>
+    let body: MayarWebhookPayload & Record<string, unknown>
     try {
-      body = JSON.parse(rawBody) as Record<string, unknown>
+      const parsed = JSON.parse(rawBody) as MayarWebhookPayload
+      body = parsed as MayarWebhookPayload & Record<string, unknown>
     } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
 
-    console.log('📩 [MAYAR] event:', body.event, '| data.status:', body.data?.status, '| productName:', (body.data as Record<string, unknown> | undefined)?.productName)
+    console.log(
+      '📩 [MAYAR] event:',
+      body.event,
+      '| data.status:',
+      body.data?.status,
+      '| productName:',
+      body.data?.productName
+    )
 
     // --- Check if payment is successful ---
     const event = String(body.event ?? '')
