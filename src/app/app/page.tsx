@@ -1,18 +1,20 @@
 'use client';
 
-import { Lock } from 'lucide-react';
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Suspense, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ControlPanel } from '@/components/ControlPanel';
 import { MainStage } from '@/components/MainStage';
 import { LibraryProgressCard } from '@/components/LibraryProgressCard';
 import { QueueBusyNotice } from '@/components/QueueBusyNotice';
+import { LibraryDetailModal } from '@/components/LibraryDetailModal';
+import { BottomTabNav } from '@/components/app/BottomTabNav';
 import { useUser } from '@/hooks/useUser';
 
 const STORAGE_KEY = 'rephot_active_generation';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getDisplayName } from '@/lib/display-name';
+import { firstOutputImageUrl } from '@/lib/generation-preview';
 
 type GenerationStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -27,22 +29,13 @@ type GenerationRow = {
   completed_at: string | null;
   aspect_ratio: string | null;
   resolution: string | null;
+  is_public?: boolean | null;
 };
 
-function firstOutputImageUrl(outputImages: unknown): string | null {
-  if (!Array.isArray(outputImages) || outputImages.length === 0) return null;
-  const first = outputImages[0];
-  if (typeof first === 'string') return first;
-  if (first && typeof first === 'object' && 'url' in first) {
-    const u = (first as { url?: unknown }).url;
-    return typeof u === 'string' ? u : null;
-  }
-  return null;
-}
-
-export default function AppPage() {
+function AppPageInner() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState<'generate' | 'library' | 'community'>('generate');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'generate' | 'library'>('generate');
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -95,7 +88,14 @@ export default function AppPage() {
   const [libraryItems, setLibraryItems] = useState<GenerationRow[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [libraryModalId, setLibraryModalId] = useState<string | null>(null);
   const [passwordUpdatedBanner, setPasswordUpdatedBanner] = useState(false);
+
+  const libraryModalItem = useMemo(
+    () =>
+      libraryModalId ? libraryItems.find((g) => g.id === libraryModalId) ?? null : null,
+    [libraryModalId, libraryItems]
+  );
 
   const isGenerating = generationStatus === 'uploading' || generationStatus === 'processing';
 
@@ -152,6 +152,12 @@ export default function AppPage() {
     if (!user) return;
     refreshBalance();
   }, [user, refreshBalance]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'library') setActiveTab('library');
+    else setActiveTab('generate');
+  }, [searchParams]);
 
   const refreshLibrary = useCallback(() => {
     setLibraryLoading(true);
@@ -508,85 +514,40 @@ export default function AppPage() {
                   }
                   const thumb = firstOutputImageUrl(item.output_images);
                   return (
-                    <div
+                    <button
                       key={item.id}
-                      className="aspect-square bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden relative group"
+                      type="button"
+                      onClick={() => setLibraryModalId(item.id)}
+                      className="group flex flex-col aspect-square overflow-hidden rounded-xl border border-neutral-200 bg-white text-left shadow-sm outline-none transition-[border-color,box-shadow] duration-200 hover:border-neutral-300 hover:shadow-md focus-visible:ring-2 focus-visible:ring-neutral-900/15 focus-visible:ring-offset-2"
+                      aria-label={`Buka detail: ${item.style}`}
                     >
-                      {thumb ? (
-                        <img
-                          src={thumb}
-                          alt={item.style}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-neutral-100 text-neutral-400 text-xs text-center px-2">
-                          {item.status === 'completed' ? 'No output' : item.status}
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-3">
-                        <span className="text-white text-xs font-semibold truncate w-full text-center">{item.style}</span>
-                        <div className="flex items-center gap-2">
-                          {thumb && (
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const res = await fetch(thumb);
-                                  const blob = await res.blob();
-                                  const url = URL.createObjectURL(blob);
-                                  const a = document.createElement('a');
-                                  a.href = url;
-                                  a.download = `rephot-${item.id.slice(0, 8)}.png`;
-                                  a.click();
-                                  URL.revokeObjectURL(url);
-                                } catch {
-                                  window.open(thumb, '_blank');
-                                }
-                              }}
-                              className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center hover:bg-white/40 transition-colors"
-                              title="Download"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                            </button>
-                          )}
-                          <button
-                            onClick={async () => {
-                              if (!confirm('Yakin ingin menghapus gambar ini? Tindakan ini tidak bisa dibatalkan.')) return;
-                              try {
-                                const res = await fetch(`/api/generations/${item.id}`, { method: 'DELETE' });
-                                const data = await res.json();
-                                if (res.ok && data.success) {
-                                  setLibraryItems((prev) => prev.filter((g) => g.id !== item.id));
-                                } else {
-                                  setLibraryError(data.error || 'Gagal menghapus. Coba lagi.');
-                                }
-                              } catch {
-                                setLibraryError('Gagal menghapus. Coba lagi.');
-                              }
-                            }}
-                            className="w-9 h-9 rounded-full bg-red-500/60 backdrop-blur-sm text-white flex items-center justify-center hover:bg-red-500/90 transition-colors"
-                            title="Delete"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                          </button>
-                        </div>
+                      <div className="relative min-h-0 flex-1 bg-neutral-100">
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center px-2 text-center text-xs text-neutral-400">
+                            {item.status === 'completed' ? 'Tanpa output' : item.status}
+                          </div>
+                        )}
                       </div>
-                    </div>
+                      <div className="flex-none border-t border-neutral-100 bg-white px-2 py-1.5">
+                        <p className="truncate text-[11px] font-medium text-neutral-700">{item.style}</p>
+                        {item.is_public ? (
+                          <p className="truncate text-[10px] text-emerald-600">Publik di Community</p>
+                        ) : null}
+                      </div>
+                    </button>
                   );
                 })}
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Community View */}
-      {activeTab === 'community' && (
-        <div className="flex-1 flex flex-col items-center justify-center bg-neutral-50/50 min-w-0 p-8 text-center relative z-0">
-          <div className="w-20 h-20 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center mb-6">
-            <Lock className="w-8 h-8 text-neutral-300" />
-          </div>
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2">Community Coming Soon</h2>
-          <p className="text-neutral-500 max-w-sm">We&apos;re building a space for creators to share and discover amazing product photography prompts and styles.</p>
         </div>
       )}
 
@@ -607,28 +568,7 @@ export default function AppPage() {
         </div>
 
         {/* Tengah: pointer-events-none supaya area kosong di luar pill tidak menangkap klik (mis. ke dropdown Profil di atas) */}
-        <div className="w-full md:w-auto md:absolute md:left-1/2 md:-translate-x-1/2 flex items-center justify-center shrink-0 pointer-events-none">
-          <div className="flex items-center justify-center gap-1 bg-neutral-100 p-1.5 rounded-full border border-neutral-200/60 shadow-inner overflow-x-auto pointer-events-auto max-w-full">
-          <button 
-            onClick={() => setActiveTab('generate')}
-            className={`px-4 sm:px-6 py-1.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${activeTab === 'generate' ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-neutral-200/50 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 hover:bg-black/5 font-medium border border-transparent'}`}
-          >
-            Generate
-          </button>
-          <button 
-            onClick={() => setActiveTab('library')}
-            className={`px-4 sm:px-6 py-1.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${activeTab === 'library' ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-neutral-200/50 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 hover:bg-black/5 font-medium border border-transparent'}`}
-          >
-            Library
-          </button>
-          <button 
-            onClick={() => setActiveTab('community')}
-            className={`px-4 sm:px-6 py-1.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap ${activeTab === 'community' ? 'bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-neutral-200/50 text-neutral-900' : 'text-neutral-500 hover:text-neutral-900 hover:bg-black/5 font-medium border border-transparent'}`}
-          >
-            Community
-          </button>
-          </div>
-        </div>
+        <BottomTabNav mainTab={activeTab} />
 
         {/* Pojok Kanan: Username & Profile Photo (Desktop) */}
         <div className="hidden md:flex relative z-50 isolate pointer-events-auto" ref={dropdownRef}>
@@ -676,6 +616,74 @@ export default function AppPage() {
 
       <QueueBusyNotice isGenerating={isGenerating} startedAt={processingStartedAt} />
 
+      {libraryModalItem && (
+        <LibraryDetailModal
+          item={{
+            id: libraryModalItem.id,
+            style: libraryModalItem.style,
+            prompt_used: libraryModalItem.prompt_used,
+            status: libraryModalItem.status,
+            created_at: libraryModalItem.created_at,
+            completed_at: libraryModalItem.completed_at,
+            is_public: libraryModalItem.is_public,
+          }}
+          imageUrl={firstOutputImageUrl(libraryModalItem.output_images)}
+          onClose={() => setLibraryModalId(null)}
+          onDownload={async () => {
+            const url = firstOutputImageUrl(libraryModalItem.output_images)
+            if (!url) return
+            try {
+              const res = await fetch(url)
+              const blob = await res.blob()
+              const u = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = u
+              a.download = `rephot-${libraryModalItem.id.slice(0, 8)}.png`
+              a.click()
+              URL.revokeObjectURL(u)
+            } catch {
+              window.open(url, '_blank')
+            }
+          }}
+          onDelete={async () => {
+            const id = libraryModalItem.id
+            try {
+              const res = await fetch(`/api/generations/${id}`, { method: 'DELETE' })
+              const data = await res.json()
+              if (res.ok && data.success) {
+                setLibraryModalId(null)
+                setLibraryItems((prev) => prev.filter((g) => g.id !== id))
+              } else {
+                setLibraryError(data.error || 'Gagal menghapus. Coba lagi.')
+              }
+            } catch {
+              setLibraryError('Gagal menghapus. Coba lagi.')
+            }
+          }}
+          onShareSuccess={() => {
+            const id = libraryModalItem.id
+            setLibraryItems((prev) =>
+              prev.map((g) => (g.id === id ? { ...g, is_public: true } : g))
+            )
+            refreshBalance()
+          }}
+        />
+      )}
+
     </div>
+  );
+}
+
+export default function AppPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-white text-neutral-500 text-sm">
+          Memuat…
+        </div>
+      }
+    >
+      <AppPageInner />
+    </Suspense>
   );
 }
