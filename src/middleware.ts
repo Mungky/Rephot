@@ -4,6 +4,33 @@ import { createServerClient } from '@supabase/ssr'
 const protectedRoutes = ['/app', '/tokens', '/profile']
 
 export async function middleware(request: NextRequest) {
+  // Supabase sering mengarahkan PKCE ke Site URL (/) + ?code=… alih-alih ke /auth/callback.
+  // Tanpa ini, kode tidak pernah ditukar dan user stuck di landing.
+  const url = request.nextUrl
+  if (url.pathname === '/' && url.searchParams.has('code')) {
+    const dest = url.clone()
+    dest.pathname = '/auth/callback'
+    if (!dest.searchParams.has('next')) {
+      dest.searchParams.set('next', '/update-password')
+    }
+    return NextResponse.redirect(dest)
+  }
+
+  // Supabase mengembalikan error reset/magic link ke Site URL (/?error=…&error_code=…)
+  if (url.pathname === '/' && url.searchParams.has('error')) {
+    const errorCode = url.searchParams.get('error_code') || ''
+    const desc = (url.searchParams.get('error_description') || '').toLowerCase()
+    const isEmailLinkIssue =
+      errorCode === 'otp_expired' ||
+      desc.includes('email link') ||
+      desc.includes('invalid or has expired') ||
+      desc.includes('link is invalid')
+
+    if (isEmailLinkIssue) {
+      return NextResponse.redirect(new URL('/forgot-password?reason=link_expired', request.url))
+    }
+  }
+
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,

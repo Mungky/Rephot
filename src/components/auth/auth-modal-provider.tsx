@@ -31,6 +31,20 @@ function AuthSearchParamsSync({
 
   useEffect(() => {
     queueMicrotask(() => {
+      if (pathname === '/' && searchParams.get('error')) {
+        const ec = searchParams.get('error_code') || '';
+        const ed = decodeURIComponent(searchParams.get('error_description') || '').toLowerCase();
+        const isEmailLinkIssue =
+          ec === 'otp_expired' ||
+          ed.includes('email link') ||
+          ed.includes('invalid or has expired') ||
+          ed.includes('link is invalid');
+        if (isEmailLinkIssue) {
+          router.replace('/forgot-password?reason=link_expired');
+          return;
+        }
+      }
+
       if (searchParams.get('error') === 'auth') {
         onUrlError('Sign-in failed. Please try again.');
         onOAuthErrorOpen();
@@ -45,6 +59,25 @@ function AuthSearchParamsSync({
       }
     });
   }, [searchParams, pathname, router, onUrlError, onAuthGate, onOAuthErrorOpen]);
+
+  // Error Supabase di hash (#error=…) tidak terbaca middleware — tangani di klien.
+  useEffect(() => {
+    if (pathname !== '/' && pathname !== '') return;
+    if (typeof window === 'undefined') return;
+    const raw = window.location.hash?.replace(/^#/, '') ?? '';
+    if (!raw.includes('error')) return;
+    const hp = new URLSearchParams(raw);
+    const errorCode = hp.get('error_code') || '';
+    const desc = decodeURIComponent(hp.get('error_description') || '').toLowerCase();
+    const isEmailLinkIssue =
+      errorCode === 'otp_expired' ||
+      desc.includes('email link') ||
+      desc.includes('invalid or has expired') ||
+      desc.includes('link is invalid');
+    if (!isEmailLinkIssue) return;
+    router.replace('/forgot-password?reason=link_expired');
+    window.history.replaceState(null, '', '/');
+  }, [pathname, router]);
 
   return null;
 }

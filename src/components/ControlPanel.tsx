@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { UploadCloud, Zap, Sparkles, Moon, Sun, Hexagon, Leaf, Camera, Layers, Maximize, Scissors, Check, X as XIcon } from 'lucide-react';
 
 const STYLES = [
@@ -14,8 +14,9 @@ const STYLES = [
 ];
 
 interface ControlPanelProps {
-  selectedStyles: string[];
-  setSelectedStyles: (styles: string[]) => void;
+  selectedStyle: string;
+  /** Wajib: callback saat user memilih satu style (hindari nama `setSelectedStyle` agar tidak tertukar dengan state string). */
+  onStyleChange: (style: string) => void;
   ratio: string;
   setRatio: (ratio: string) => void;
   resolution: string;
@@ -32,8 +33,8 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({ 
-  selectedStyles, 
-  setSelectedStyles, 
+  selectedStyle, 
+  onStyleChange, 
   ratio, 
   setRatio, 
   resolution, 
@@ -48,14 +49,6 @@ export function ControlPanel({
   isGenerating,
   generationStatus,
 }: ControlPanelProps) {
-  const toggleStyle = (name: string) => {
-    setSelectedStyles(
-      selectedStyles.includes(name) 
-        ? selectedStyles.filter(s => s !== name) 
-        : [...selectedStyles, name]
-    );
-  };
-  
   const handleRatioChange = (r: string) => {
     setRatio(r);
     setOpenPopup(null);
@@ -67,6 +60,7 @@ export function ControlPanel({
   };
 
   const [openPopup, setOpenPopup] = useState<'ratio' | 'resolution' | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,14 +113,31 @@ export function ControlPanel({
             </div>
           </div>
         ) : (
-          <label className="border-2 border-dashed border-neutral-300 rounded-xl bg-neutral-50/50 hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center p-5 cursor-pointer group relative overflow-hidden h-[104px]">
-            <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            className="border-2 border-dashed border-neutral-300 rounded-xl bg-neutral-50/50 hover:bg-neutral-50 transition-colors flex flex-col items-center justify-center p-5 cursor-pointer group relative overflow-hidden h-[104px] outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             <div className="absolute inset-0 bg-neutral-100/0 group-hover:bg-neutral-100/50 transition-colors" />
             <div className="w-9 h-9 rounded-lg bg-white shadow-sm border border-neutral-100 flex items-center justify-center mb-2 group-hover:-translate-y-0.5 transition-transform duration-300 relative z-10">
               <UploadCloud className="text-[#0A0A0A] w-4 h-4" />
             </div>
-            <span className="text-[13px] font-medium text-neutral-800 relative z-10">Drag & drop or click</span>
-          </label>
+            <span className="text-[13px] font-medium text-neutral-800 relative z-10">Upload Foto</span>
+          </div>
         )}
       </div>
 
@@ -144,19 +155,20 @@ export function ControlPanel({
         />
       </div>
 
-      {/* Style Selector */}
-      <div className="flex flex-col gap-3">
+      {/* Style Selector — mb besar agar area pill tidak tertutup sticky footer + bar ratio/resolusi */}
+      <div className="flex flex-col gap-3 mb-28 relative z-10">
         <div className="flex items-center justify-between">
           <label className="text-sm font-semibold text-neutral-800">Environment Style</label>
         </div>
-        <div className="flex flex-wrap gap-2 pr-1 pb-4">
+        <div className="flex flex-wrap gap-2 pr-1 pb-2">
           {STYLES.map((style) => {
             const Icon = style.icon;
-            const isSelected = selectedStyles.includes(style.name);
+            const isSelected = selectedStyle === style.name;
             return (
               <button 
+                type="button"
                 key={style.name}
-                onClick={() => toggleStyle(style.name)}
+                onClick={() => onStyleChange(style.name)}
                 className={`px-3 py-1.5 rounded-full border transition-all duration-200 flex items-center gap-2 ${
                   isSelected 
                     ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-sm' 

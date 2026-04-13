@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
@@ -11,6 +10,7 @@ import {
   getOAuthCallbackNextPath,
   navigateAfterAuth,
 } from '@/lib/post-auth-navigation';
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 
 const EXISTING_EMAIL_MESSAGE = 'This email is already in use. Please Sign In.';
 
@@ -67,7 +67,7 @@ export function AuthModal({
 }: AuthModalProps) {
   const supabase = useMemo(() => createClient(), []);
 
-  const [panel, setPanel] = useState<'signin' | 'signup'>(initialMode);
+  const [panel, setPanel] = useState<'signin' | 'signup' | 'forgot'>(initialMode);
   const [awaitingVerification, setAwaitingVerification] = useState(false);
 
   const [email, setEmail] = useState('');
@@ -137,6 +137,11 @@ export function AuthModal({
     setOtp('');
     setError(null);
     setTermsAccepted(false);
+  };
+
+  const switchToForgot = () => {
+    setPanel('forgot');
+    setError(null);
   };
 
   const switchToSignUp = () => {
@@ -333,6 +338,20 @@ export function AuthModal({
               </p>
             </form>
           </>
+        ) : panel === 'forgot' ? (
+          <>
+            <div className="pr-10 text-center">
+              <h2 id="auth-modal-title" className="font-['Bricolage_Grotesque'] text-2xl font-extrabold tracking-tight text-[#0A0A0A]">
+                Lupa password
+              </h2>
+              <p className="mt-2 text-sm text-[#888888]">
+                Masukkan email akunmu. Kami kirim link untuk atur ulang password.
+              </p>
+            </div>
+            <div className="mt-6">
+              <ForgotPasswordForm onBack={switchToSignIn} backLabel="Kembali ke masuk" />
+            </div>
+          </>
         ) : panel === 'signin' ? (
           <>
             <div className="pr-10 text-center">
@@ -362,12 +381,13 @@ export function AuthModal({
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
                   <label className="block text-sm font-medium text-[#0A0A0A]">Password</label>
-                  <Link
-                    href="#"
+                  <button
+                    type="button"
+                    onClick={switchToForgot}
                     className="text-sm font-medium text-[#888888] transition-colors hover:text-[#0A0A0A]"
                   >
-                    Forgot?
-                  </Link>
+                    Lupa password?
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#888888]" />

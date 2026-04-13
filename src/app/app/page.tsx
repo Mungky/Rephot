@@ -55,7 +55,7 @@ export default function AppPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedPreviewUrl, setUploadedPreviewUrl] = useState<string | null>(null);
   const [customPrompt, setCustomPrompt] = useState('');
-  const [selectedStyles, setSelectedStyles] = useState<string[]>(['Clean White']);
+  const [selectedStyle, setSelectedStyle] = useState('Clean White');
   const [ratio, setRatio] = useState('1:1');
   const [resolution, setResolution] = useState('1K');
   const [generationId, setGenerationId] = useState<string | null>(() => {
@@ -95,6 +95,7 @@ export default function AppPage() {
   const [libraryItems, setLibraryItems] = useState<GenerationRow[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryError, setLibraryError] = useState<string | null>(null);
+  const [passwordUpdatedBanner, setPasswordUpdatedBanner] = useState(false);
 
   const isGenerating = generationStatus === 'uploading' || generationStatus === 'processing';
 
@@ -112,6 +113,17 @@ export default function AppPage() {
     await supabase.auth.signOut();
     router.push('/');
   };
+
+  // ---------- Password reset success (dari /update-password) ----------
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('password_updated') !== '1') return;
+    setPasswordUpdatedBanner(true);
+    params.delete('password_updated');
+    const q = params.toString();
+    router.replace(`/app${q ? `?${q}` : ''}`, { scroll: false });
+  }, [router]);
 
   // ---------- Mount & click-outside ----------
   useEffect(() => {
@@ -269,10 +281,10 @@ export default function AppPage() {
     setGeneratedImageUrl(null);
     const startTs = Date.now();
     setProcessingStartedAt(startTs);
-    setProcessingStyle(selectedStyles[0] || 'Generation');
+    setProcessingStyle(selectedStyle || 'Generation');
 
     try {
-      const styleSlug = selectedStyles[0]?.toLowerCase().replace(/\s+/g, '_') || 'clean_white';
+      const styleSlug = selectedStyle?.toLowerCase().replace(/\s+/g, '_') || 'clean_white';
 
       const form = new FormData();
       form.append('file', uploadedFile);
@@ -299,7 +311,7 @@ export default function AppPage() {
       }
 
       setGenerationId(data.generationId);
-      saveActiveGeneration(data.generationId, startTs, selectedStyles[0] || 'Generation');
+      saveActiveGeneration(data.generationId, startTs, selectedStyle || 'Generation');
 
     } catch (err) {
       console.error('handleGenerate error:', err);
@@ -313,16 +325,16 @@ export default function AppPage() {
   // ---------- Preview image based on selected style ----------
   const getPreviewImage = () => {
     if (uploadedPreviewUrl) return uploadedPreviewUrl;
-    if (selectedStyles.includes('Dark Premium')) {
+    if (selectedStyle === 'Dark Premium') {
       return "https://images.unsplash.com/photo-1546868871-7041f2a55e12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzbWFydHdhdGNoJTIwZGFya3xlbnwwfHx8fDE3NzU0NTQ1Mzh8MA&ixlib=rb-4.1.0&q=80&w=1080";
     }
-    if (selectedStyles.includes('Outdoor Natural')) {
+    if (selectedStyle === 'Outdoor Natural') {
       return "https://images.unsplash.com/photo-1542291026-7eec264c27ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBzaG9lc3xlbnwwfHx8fDE3NzU0NTQ1Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080";
     }
-    if (selectedStyles.includes('Minimal Aesthetic')) {
+    if (selectedStyle === 'Minimal Aesthetic') {
       return "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxza2luY2FyZSUyMG1pbmltYWx8ZW58MHx8fHwxNzc1NDU0NTQwfDA&ixlib=rb-4.1.0&q=80&w=1080";
     }
-    if (selectedStyles.includes('Cinematic')) {
+    if (selectedStyle === 'Cinematic') {
       return "https://images.unsplash.com/photo-1594035910387-fea47794261f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJmdW1lJTIwY2luZW1hdGljfGVufDB8fHx8MTc3NTQ1NDU0MXww&ixlib=rb-4.1.0&q=80&w=1080";
     }
     return "https://images.unsplash.com/photo-1739949816834-893c498203a1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwc2tpbmNhcmUlMjBwcm9kdWN0JTIwcGhvdG9ncmFwaHl8ZW58MXx8fHwxNzc1NDU0NTM3fDA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -401,6 +413,21 @@ export default function AppPage() {
         </div>
       )}
 
+      {passwordUpdatedBanner && (
+        <div className="flex-none px-4 md:px-6 py-2.5 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
+          <span className="text-sm text-emerald-800 font-medium">
+            Password berhasil diperbarui. Kamu sudah masuk dengan password baru.
+          </span>
+          <button
+            type="button"
+            onClick={() => setPasswordUpdatedBanner(false)}
+            className="text-emerald-600 hover:text-emerald-800 text-xs font-medium"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
       {/* Main Content Area */}
       {activeTab === 'generate' && (
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-0">
@@ -408,8 +435,8 @@ export default function AppPage() {
           {/* Left Panel: Control Desk */}
           <div className="flex-1 md:flex-none w-full md:w-[320px] lg:w-[350px] xl:w-[400px] md:h-full overflow-y-auto bg-white border-t md:border-t-0 md:border-r border-neutral-200/80 shadow-[1px_0_10px_rgba(0,0,0,0.02)] z-10 flex flex-col order-2 md:order-1">
             <ControlPanel 
-              selectedStyles={selectedStyles}
-              setSelectedStyles={setSelectedStyles}
+              selectedStyle={selectedStyle}
+              onStyleChange={setSelectedStyle}
               ratio={ratio}
               setRatio={setRatio}
               resolution={resolution}
