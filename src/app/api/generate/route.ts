@@ -44,21 +44,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
-    const { count, error: rateLimitError } = await supabase
-      .from('generations')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', oneMinuteAgo)
-
-    if (rateLimitError) throw rateLimitError
-    if ((count ?? 0) >= 3) {
-      return NextResponse.json(
-        { error: 'Terlalu banyak request. Silakan tunggu 1 menit.' },
-        { status: 429 }
-      )
-    }
-
     const contentType = req.headers.get('content-type') || ''
 
     let imageUrl: string | null = null
@@ -150,22 +135,42 @@ export async function POST(req: Request) {
 
     const adminSupabase = getAdminSupabase()
 
-    const { data: genRecord, error: genError } = await adminSupabase
-      .from('generations')
-      .insert({
-        user_id: user.id,
-        input_image_url: imageUrl,
-        style,
-        prompt_used: prompt || '',
-        tokens_charged: 4,
-        status: 'processing',
-        aspect_ratio: aspectRatio,
-        resolution,
-      })
-      .select('id')
-      .single()
+    const { data: genRows, error: genError } = await adminSupabase.rpc(
+      'create_generation_safely',
+      {
+        p_user_id: user.id,
+        p_payload: {
+          input_image_url: imageUrl,
+          style,
+          prompt_used: prompt || '',
+          tokens_charged: 4,
+          aspect_ratio: aspectRatio,
+          resolution,
+        },
+      }
+    )
 
-    if (genError) throw genError
+    if (genError) {
+      const errText = `${genError.message ?? ''} ${(genError as { details?: string }).details ?? ''}`
+      if (errText.includes('MAX_CONCURRENT_REACHED')) {
+        return NextResponse.json(
+          {
+            error:
+              'Kamu sudah punya 3 foto yang sedang diproses. Tunggu salah satu selesai dulu ya!',
+          },
+          { status: 429 }
+        )
+      }
+      throw genError
+    }
+
+    const genRecord = Array.isArray(genRows) ? genRows[0] : genRows
+    if (!genRecord?.id) {
+      return NextResponse.json(
+        { error: 'Gagal membuat record generate.' },
+        { status: 500 }
+      )
+    }
 
     // type harus sesuai token_transactions_type_check di DB (mis. generate, purchase, welcome_bonus)
     const { error: deductError } = await adminSupabase
